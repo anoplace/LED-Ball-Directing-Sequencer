@@ -6,15 +6,19 @@ using System.Linq;
 [System.SerializableAttribute]
 public class Pattern : ScriptableObject
 {
-    public string name;
+    public float duration = 5f;
     public int numBalls = 10;
     Sequencer.Ball[] balls;
     public List<PatternPosition> patternList = new List<PatternPosition>();
     public List<NotePosition> noteList = new List<NotePosition>();
 
+    public void Init()
+    {
+
+    }
     public Color[] GetColors(float time, int ballIndex)
     {
-        var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.GetDuration()).FirstOrDefault();
+        var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.duration).FirstOrDefault();
         if (pp != null)
             return pp.pattern.GetColors(time - pp.time, ballIndex);
         var nextNote = GetNextNote(time, ballIndex);
@@ -23,20 +27,9 @@ public class Pattern : ScriptableObject
         if (nextNote == null)
         {
             if (currentNote == null)
-                return Enumerable.Repeat<Color>(Color.black,balls[ballIndex].numLeds).ToArray();
+                return Enumerable.Repeat<Color>(Color.black, balls[ballIndex].numLeds).ToArray();
         }
         return new Color[] { Color.black };
-    }
-    public float GetDuration()
-    {
-        float duration = 0;
-        foreach (var pp in patternList)
-            if (duration < pp.time + pp.pattern.GetDuration())
-                duration = pp.time + pp.pattern.GetDuration();
-        foreach (var np in noteList)
-            if (duration < np.time + np.note.duration)
-                duration = np.time + np.note.duration;
-        return duration;
     }
 
     public bool CheckLoop(Pattern p)
@@ -85,13 +78,8 @@ public class Pattern : ScriptableObject
 [System.SerializableAttribute]
 public class PatternPosition
 {
-    public string name = "test";
     public float time;
-    public int offset = 0;
+    public int ballIndex;
     public Pattern pattern;
 
-    void SetName()
-    {
-        name = pattern.name;
-    }
 }

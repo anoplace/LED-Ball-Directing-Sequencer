@@ -14,7 +14,7 @@ public class Note : ScriptableObject
     public Color[] colors;
     public float shift = 0;
     public int numLeds = 12;
-    public Note()
+    public void Init()
     {
         colors = new Color[numLeds];
     }
