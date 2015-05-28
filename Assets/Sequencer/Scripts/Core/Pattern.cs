@@ -16,6 +16,7 @@ public class Pattern : ScriptableObject
     {
 
     }
+	//colors for LEDs of ball
     public Color[] GetColors(float time, int ballIndex)
     {
         var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.duration).FirstOrDefault();

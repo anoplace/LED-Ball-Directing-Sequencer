@@ -5,7 +5,7 @@ using System.Collections.Generic;
 [System.SerializableAttribute]
 public class Note : ScriptableObject
 {
-    public float duration = 0.25f;
+    public float duration = 1f;
     public Interpolation interpolationType;
     public bool
         useGradient = true,

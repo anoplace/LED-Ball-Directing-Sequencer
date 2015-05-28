@@ -12,26 +12,25 @@ public class SequencerEditorWindow : EditorWindow
         var window = GetWindow<SequencerEditorWindow>();
         window.Show();
     }
-    const float
-        noteWidth = 32f,
-        noteHeight = 32f;
+    const float noteWidth = 32f;
+    const float noteHeight = 32f;
 
     Sequencer editingSq;
-    Pattern editingPtn;
-    Note editingNot;
+
     object activeNode;
     object willDelete;
 
-    float newTime;
     int mode;
     bool showPicker = false;
-    Object pickObj;
+    Object pickedObj;
+
     Vector2 scrollPos;
     Vector2 tmpMousePosition;
 
     // Update is called once per frame
     void Update()
     {
+        //update is for add and remove nodes
         CheckPicker();
         if (willDelete == null)
             return;
@@ -71,7 +70,7 @@ public class SequencerEditorWindow : EditorWindow
         Event e = Event.current;
 
         scrollPos = GUILayout.BeginScrollView(scrollPos, false, false);
-        float scrollWidth = editingSq.length * 10f;
+        float scrollWidth = editingSq.duration * noteWidth;
         GUILayout.BeginHorizontal(GUILayout.Width(scrollWidth));
         GUILayout.FlexibleSpace();
 
@@ -132,14 +131,13 @@ public class SequencerEditorWindow : EditorWindow
     {
         var e = Event.current;
         var currentPp = editingSq.patternList[id];
-        editingPtn = currentPp.pattern;
 
         GUILayout.BeginHorizontal(GUILayout.Width(noteWidth * 0.25f));
         GUILayout.FlexibleSpace();
 
         if (e.button == 0 && (e.type == EventType.mouseDown))
         {
-            Selection.activeObject = editingPtn;
+            Selection.activeObject = currentPp.pattern;
             activeNode = currentPp;
         }
 
@@ -151,14 +149,13 @@ public class SequencerEditorWindow : EditorWindow
     {
         var e = Event.current;
         var currentNp = editingSq.noteList[id - editingSq.patternList.Count];
-        editingNot = currentNp.note;
 
         GUILayout.BeginHorizontal(GUILayout.Width(noteWidth * 0.25f));
         GUILayout.FlexibleSpace();
 
         if (e.button == 0 && (e.type == EventType.mouseDown))
         {
-            Selection.activeObject = editingNot;
+            Selection.activeObject = currentNp.note;
             activeNode = currentNp;
         }
 
@@ -169,19 +166,17 @@ public class SequencerEditorWindow : EditorWindow
 
     void CheckPicker()
     {
-        Event e = Event.current;
-
         if (showPicker)
         {
             var pickerID = EditorGUIUtility.GetObjectPickerControlID();
             if (pickerID != 0)
-                pickObj = EditorGUIUtility.GetObjectPickerObject();
+                pickedObj = EditorGUIUtility.GetObjectPickerObject();
 
             if (mode == 1)
             {
                 if (pickerID == 0)
                 {
-                    var newPtn = pickObj as Pattern;
+                    var newPtn = pickedObj as Pattern;
                     if (newPtn != null)
                     {
                         var newPp = new PatternPosition();
@@ -198,7 +193,7 @@ public class SequencerEditorWindow : EditorWindow
             {
                 if (pickerID == 0)
                 {
-                    var newNot = pickObj as Note;
+                    var newNot = pickedObj as Note;
                     if (newNot != null)
                     {
                         var newNp = new NotePosition();
@@ -214,6 +209,7 @@ public class SequencerEditorWindow : EditorWindow
         }
     }
 
+    #region GenericMenu Functions
     void CreatePattern()
     {
         Undo.RecordObject(editingSq, "add new pattern");
@@ -266,19 +262,26 @@ public class SequencerEditorWindow : EditorWindow
         EditorGUIUtility.ShowObjectPicker<Note>(null, false, "", mode);
         showPicker = true;
     }
+    #endregion
 
+    #region Snap node position
     void SetPatternValWithPos(PatternPosition pp, Vector2 pos)
     {
         Undo.RecordObject(editingSq, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
+        pp.time = Mathf.Max(0, Mathf.Min((float)editingSq.duration - 0.25f, pp.time));
         pp.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
+        pp.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, pp.ballIndex));
         EditorUtility.SetDirty(editingSq);
     }
     void SetNoteValWithPos(NotePosition np, Vector2 pos)
     {
         Undo.RecordObject(editingSq, "edit note pos");
         np.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
+        np.time = Mathf.Max(0, Mathf.Min((float)editingSq.duration - 0.25f, np.time));
         np.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
+        np.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, np.ballIndex));
         EditorUtility.SetDirty(editingSq);
     }
+    #endregion
 }

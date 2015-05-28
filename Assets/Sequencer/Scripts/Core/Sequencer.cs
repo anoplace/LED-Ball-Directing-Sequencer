@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class Sequencer : MonoBehaviour
 {
     public int
-        length = 32,
+        duration = 32,
 		numBalls = 10;
     public float
         bpm = 80f,
@@ -16,7 +16,7 @@ public class Sequencer : MonoBehaviour
 
     public float SetTime()
     {
-        time = (float)length * (60f / bpm);
+        time = (float)duration * (60f / bpm);
         return time;
     }
     // Use this for initialization
