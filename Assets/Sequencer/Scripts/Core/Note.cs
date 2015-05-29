@@ -6,10 +6,9 @@ using System.Collections.Generic;
 public class Note : ScriptableObject
 {
     public float duration = 1f;
-    public Interpolation interpolationType;
-    public bool
-        useGradient = true,
-        useSingleColor = false;
+    public Interpolation interpolationType = Interpolation.flat;
+    public bool useGradient = true;
+    public bool useSingleColor = false;
     public Gradient gradient;
     public Color[] colors;
     public float shift = 0;

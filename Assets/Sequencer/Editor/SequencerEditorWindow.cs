@@ -70,7 +70,7 @@ public class SequencerEditorWindow : EditorWindow
         Event e = Event.current;
 
         scrollPos = GUILayout.BeginScrollView(scrollPos, false, false);
-        float scrollWidth = editingSq.duration * noteWidth;
+        float scrollWidth = editingSq.length * noteWidth;
         GUILayout.BeginHorizontal(GUILayout.Width(scrollWidth));
         GUILayout.FlexibleSpace();
 
@@ -269,7 +269,7 @@ public class SequencerEditorWindow : EditorWindow
     {
         Undo.RecordObject(editingSq, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        pp.time = Mathf.Max(0, Mathf.Min((float)editingSq.duration - 0.25f, pp.time));
+        pp.time = Mathf.Max(0, Mathf.Min((float)editingSq.length - 0.25f, pp.time));
         pp.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
         pp.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, pp.ballIndex));
         EditorUtility.SetDirty(editingSq);
@@ -278,7 +278,7 @@ public class SequencerEditorWindow : EditorWindow
     {
         Undo.RecordObject(editingSq, "edit note pos");
         np.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        np.time = Mathf.Max(0, Mathf.Min((float)editingSq.duration - 0.25f, np.time));
+        np.time = Mathf.Max(0, Mathf.Min((float)editingSq.length - 0.25f, np.time));
         np.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
         np.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, np.ballIndex));
         EditorUtility.SetDirty(editingSq);

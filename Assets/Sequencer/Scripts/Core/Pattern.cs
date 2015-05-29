@@ -16,21 +16,30 @@ public class Pattern : ScriptableObject
     {
 
     }
-	//colors for LEDs of ball
+    //colors for LEDs of ball
     public Color[] GetColors(float time, int ballIndex)
     {
         var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.duration).FirstOrDefault();
         if (pp != null)
-            return pp.pattern.GetColors(time - pp.time, ballIndex);
+            return pp.pattern.GetColors(time - pp.time, ballIndex + pp.ballIndex);
         var nextNote = GetNextNote(time, ballIndex);
         var currentNote = GetCurrentNote(time, ballIndex);
         var prevNote = GetPrevNote(time, ballIndex);
+		
         if (nextNote == null)
         {
-            if (currentNote == null)
-                return Enumerable.Repeat<Color>(Color.black, balls[ballIndex].numLeds).ToArray();
+            if (currentNote != null)
+                return currentNote.note.colors;
         }
-        return new Color[] { Color.black };
+        else
+        {
+            if (nextNote.note.interpolationType == Note.Interpolation.lerp)
+            {
+                if (prevNote != null)
+                    return GetLerpColors(time, ballIndex, prevNote, nextNote);
+            }
+        }
+        return Enumerable.Repeat<Color>(Color.black, balls[ballIndex].numLeds).ToArray();
     }
 
     public bool CheckLoop(Pattern p)
@@ -44,13 +53,23 @@ public class Pattern : ScriptableObject
         }
         return false;
     }
-    float GetLerpVal(float time, int ballIndex)
+    Color[] GetLerpColors(
+        float time, int ballIndex,
+        NotePosition prevNote, NotePosition nextNote
+    )
     {
-        NotePosition
-            prevNote = GetPrevNote(time, ballIndex),
-            nextNote = GetNextNote(time, ballIndex);
-        if (prevNote == null || nextNote == null)
-            return 0;
+        var lerpVal = GetLerpVal(time, prevNote, nextNote);
+        var pNote = prevNote.note;
+        var nNote = nextNote.note;
+
+        var colors = new Color[prevNote.note.numLeds];
+        for (var i = 0; i < colors.Length; i++)
+            colors[i] = Color.Lerp(pNote.colors[i], nNote.colors[i], lerpVal);
+
+        return colors;
+    }
+    float GetLerpVal(float time, NotePosition prevNote, NotePosition nextNote)
+    {
         float
             prevTime = prevNote.time,
             nextTime = nextNote.time;
