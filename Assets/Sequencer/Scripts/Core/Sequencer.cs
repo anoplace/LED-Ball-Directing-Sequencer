@@ -12,7 +12,6 @@ public class Sequencer : MonoBehaviour
     public float playTime = 0;
     public float duration;
     public List<PatternPosition> patternList = new List<PatternPosition>();
-    public List<NotePosition> noteList = new List<NotePosition>();
 
     public Color[] GetColors(float time, int ballIndex)
     {
@@ -38,7 +37,6 @@ public class Sequencer : MonoBehaviour
     {
 
     }
-
 
     [System.SerializableAttribute]
     public class Ball : ScriptableObject

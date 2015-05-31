@@ -17,4 +17,6 @@ public class SequencerEditor : Editor
         if (GUILayout.Button("Show Sequencer Editor"))
             SequencerEditorWindow.ShowWindow();
     }
+	
+	
 }

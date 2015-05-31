@@ -12,8 +12,6 @@ public class SequencerEditorWindow : EditorWindow
         var window = GetWindow<SequencerEditorWindow>();
         window.Show();
     }
-    const float noteWidth = 32f;
-    const float noteHeight = 32f;
 
     Sequencer editingSq;
 
@@ -26,6 +24,14 @@ public class SequencerEditorWindow : EditorWindow
 
     Vector2 scrollPos;
     Vector2 tmpMousePosition;
+    float zoom = 1f;
+    int noteWidth
+    {
+        get
+        {
+            return (int)(zoom * (float)SequencerEditorUtility.noteWidth);
+        }
+    }
 
     // Update is called once per frame
     void Update()
@@ -35,12 +41,9 @@ public class SequencerEditorWindow : EditorWindow
         if (willDelete == null)
             return;
         var deletePtn = willDelete as PatternPosition;
-        var deleteNot = willDelete as NotePosition;
 
         if (deletePtn != null && editingSq.patternList.Contains(deletePtn))
             editingSq.patternList.Remove(deletePtn);
-        if (deleteNot != null && editingSq.noteList.Contains(deleteNot))
-            editingSq.noteList.Remove(deleteNot);
         willDelete = null;
         Repaint();
     }
@@ -63,14 +66,18 @@ public class SequencerEditorWindow : EditorWindow
             return;
         }
         editingSq = sq;
+		
         DrawSequencerGUI();
     }
     void DrawSequencerGUI()
     {
         Event e = Event.current;
 
-        scrollPos = GUILayout.BeginScrollView(scrollPos, false, false);
-        float scrollWidth = editingSq.length * noteWidth;
+        EditorGUILayout.LabelField(editingSq.name);
+		
+        var scrollHeight = (editingSq.numBalls + 1) * SequencerEditorUtility.noteHeight;
+        scrollPos = GUILayout.BeginScrollView(scrollPos, false, false, GUILayout.Height(scrollHeight));
+        var scrollWidth = editingSq.length * noteWidth;
         GUILayout.BeginHorizontal(GUILayout.Width(scrollWidth));
         GUILayout.FlexibleSpace();
 
@@ -79,9 +86,7 @@ public class SequencerEditorWindow : EditorWindow
             tmpMousePosition = e.mousePosition;
             var menu = new GenericMenu();
             menu.AddItem(new GUIContent("New Pattern"), false, CreatePattern);
-            menu.AddItem(new GUIContent("New Note"), false, CreateNote);
             menu.AddItem(new GUIContent("Add Pattern"), false, SelectPattern);
-            menu.AddItem(new GUIContent("Add Note"), false, SelectNote);
             menu.ShowAsContext();
             e.Use();
         }
@@ -90,7 +95,7 @@ public class SequencerEditorWindow : EditorWindow
         for (var x = 0; x < scrollWidth; x = x + (int)noteWidth)
             Handles.DrawLine(new Vector3(x, 0, 0), new Vector3(x, 1000, 0));
         Handles.color = Color.gray;
-        for (var y = 0; y <= editingSq.numBalls * noteHeight; y += (int)noteHeight)
+        for (var y = 0; y <= editingSq.numBalls * SequencerEditorUtility.noteHeight; y += (int)SequencerEditorUtility.noteHeight)
             Handles.DrawLine(new Vector3(0, y, 0), new Vector3(scrollWidth, y, 0));
 
         // 		Patterns and Notes are here!!
@@ -98,33 +103,32 @@ public class SequencerEditorWindow : EditorWindow
         for (var i = 0; i < editingSq.patternList.Count; i++)
         {
             var pp = editingSq.patternList[i];
-            var rct = new Rect(pp.time * noteWidth, pp.ballIndex * noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * noteHeight);
+            var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
             rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, "flow node 1");
             if (!e.isMouse)
                 SetPatternValWithPos(pp, new Vector2(rct.xMin, rct.yMin));
-        }
-        for (var i = 0; i < editingSq.noteList.Count; i++)
-        {
-            var np = editingSq.noteList[i];
-            var rct = new Rect(np.time * noteWidth, np.ballIndex * noteHeight, np.note.duration * noteWidth, noteHeight);
-            rct = GUILayout.Window(i + editingSq.patternList.Count, rct, NoteWindow, np.note.name, "flow node 1");
-            if (!e.isMouse)
-                SetNoteValWithPos(np, new Vector2(rct.xMin, rct.yMin));
         }
         EndWindows();
 
         GUILayout.EndHorizontal();
         GUILayout.EndScrollView();
 
+        var z = EditorGUILayout.FloatField("Zoom", zoom);
+        if (z != zoom)
+        {
+            activeNode = null;
+            z = Mathf.Max(0.1f, Mathf.Min(2f, z));
+            zoom = z;
+        }
+
         if (e.button == 0 && e.type == EventType.mouseDown)
         {
             Selection.activeObject = editingSq;
+            EditorGUI.FocusTextInControl("");
             activeNode = null;
         }
         if (e.isKey && (e.keyCode == KeyCode.Backspace || e.keyCode == KeyCode.Delete))
             willDelete = activeNode;
-
-        //         CheckPicker();
     }
 
     void PatternWindow(int id)
@@ -145,66 +149,30 @@ public class SequencerEditorWindow : EditorWindow
         GUI.DragWindow();
     }
 
-    void NoteWindow(int id)
-    {
-        var e = Event.current;
-        var currentNp = editingSq.noteList[id - editingSq.patternList.Count];
-
-        GUILayout.BeginHorizontal(GUILayout.Width(noteWidth * 0.25f));
-        GUILayout.FlexibleSpace();
-
-        if (e.button == 0 && (e.type == EventType.mouseDown))
-        {
-            Selection.activeObject = currentNp.note;
-            activeNode = currentNp;
-        }
-
-        GUILayout.EndHorizontal();
-        GUI.DragWindow();
-    }
-
 
     void CheckPicker()
     {
-        if (showPicker)
-        {
-            var pickerID = EditorGUIUtility.GetObjectPickerControlID();
-            if (pickerID != 0)
-                pickedObj = EditorGUIUtility.GetObjectPickerObject();
+        if (!showPicker)
+            return;
+        var pickerID = EditorGUIUtility.GetObjectPickerControlID();
+        if (pickerID != 0)
+            pickedObj = EditorGUIUtility.GetObjectPickerObject();
 
-            if (mode == 1)
+        if (mode == 1)
+        {
+            if (pickerID == 0)
             {
-                if (pickerID == 0)
+                var newPtn = pickedObj as Pattern;
+                if (newPtn != null)
                 {
-                    var newPtn = pickedObj as Pattern;
-                    if (newPtn != null)
-                    {
-                        var newPp = new PatternPosition();
-                        newPp.pattern = newPtn;
-                        SetPatternValWithPos(newPp, tmpMousePosition);
-                        editingSq.patternList.Add(newPp);
-                    }
-                    showPicker = false;
-                    mode = 0;
-                    Repaint();
+                    var newPp = new PatternPosition();
+                    newPp.pattern = newPtn;
+                    SetPatternValWithPos(newPp, tmpMousePosition);
+                    editingSq.patternList.Add(newPp);
                 }
-            }
-            else if (mode == 2)
-            {
-                if (pickerID == 0)
-                {
-                    var newNot = pickedObj as Note;
-                    if (newNot != null)
-                    {
-                        var newNp = new NotePosition();
-                        newNp.note = newNot;
-                        SetNoteValWithPos(newNp, tmpMousePosition);
-                        editingSq.noteList.Add(newNp);
-                    }
-                    showPicker = false;
-                    mode = 0;
-                    Repaint();
-                }
+                showPicker = false;
+                mode = 0;
+                Repaint();
             }
         }
     }
@@ -230,36 +198,11 @@ public class SequencerEditorWindow : EditorWindow
         EditorUtility.SetDirty(editingSq);
         Repaint();
     }
-    void CreateNote()
-    {
-        Undo.RecordObject(editingSq, "add new note");
-        var newNp = new NotePosition();
-        var newNote = Note.CreateInstance<Note>();
-        newNote.Init();
-
-        AssetDatabase.CreateAsset(newNote, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Notes/new Note.asset"));
-        AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-
-        newNp.note = newNote;
-        SetNoteValWithPos(newNp, tmpMousePosition);
-        editingSq.noteList.Add(newNp);
-
-        Selection.activeObject = newNote;
-        EditorUtility.SetDirty(editingSq);
-        Repaint();
-    }
 
     void SelectPattern()
     {
         mode = 1;
         EditorGUIUtility.ShowObjectPicker<Pattern>(null, false, "", mode);
-        showPicker = true;
-    }
-    void SelectNote()
-    {
-        mode = 2;
-        EditorGUIUtility.ShowObjectPicker<Note>(null, false, "", mode);
         showPicker = true;
     }
     #endregion
@@ -270,17 +213,8 @@ public class SequencerEditorWindow : EditorWindow
         Undo.RecordObject(editingSq, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
         pp.time = Mathf.Max(0, Mathf.Min((float)editingSq.length - 0.25f, pp.time));
-        pp.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
+        pp.ballIndex = Mathf.FloorToInt(pos.y / SequencerEditorUtility.noteHeight);
         pp.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, pp.ballIndex));
-        EditorUtility.SetDirty(editingSq);
-    }
-    void SetNoteValWithPos(NotePosition np, Vector2 pos)
-    {
-        Undo.RecordObject(editingSq, "edit note pos");
-        np.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        np.time = Mathf.Max(0, Mathf.Min((float)editingSq.length - 0.25f, np.time));
-        np.ballIndex = Mathf.FloorToInt(pos.y / noteHeight);
-        np.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, np.ballIndex));
         EditorUtility.SetDirty(editingSq);
     }
     #endregion
