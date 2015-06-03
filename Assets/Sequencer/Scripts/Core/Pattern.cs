@@ -8,10 +8,45 @@ public class Pattern : ScriptableObject
 {
     public float duration = 5f;
     public int numBalls = 10;
-    Sequencer.Ball[] balls;
+    public int numLeds = 12;
     public List<PatternPosition> patternList = new List<PatternPosition>();
     public List<NotePosition> noteList = new List<NotePosition>();
 
+    public Texture2D patternTex
+    {
+        get
+        {
+            if (_tex == null)
+                CreatePatternTex();
+            return _tex;
+        }
+    }
+    Texture2D _tex;
+    public void CreatePatternTex()
+    {
+        if (_tex != null)
+            DestroyImmediate(_tex);
+
+        var width = (int)(duration * 8);
+        var height = numBalls * numLeds;
+        _tex = new Texture2D(width, height);
+        _tex.filterMode = FilterMode.Point;
+
+        for (var x = 0; x < width; x++)
+        {
+            for (var i = 0; i < numBalls; i++)//ball index
+            {
+                var ballColors = GetColors((float)x / 8f, i);
+                for (var n = 0; n < numLeds; n++)//num leds
+                {
+                    var y = i * numLeds + n;
+                    _tex.SetPixel(x, y, ballColors[n]);
+                }
+            }
+        }
+        _tex.Apply();
+        _tex.hideFlags = HideFlags.HideAndDontSave;
+    }
     public void Init()
     {
 
@@ -25,11 +60,11 @@ public class Pattern : ScriptableObject
         var nextNote = GetNextNote(time, ballIndex);
         var currentNote = GetCurrentNote(time, ballIndex);
         var prevNote = GetPrevNote(time, ballIndex);
-		
+
         if (nextNote == null)
         {
             if (currentNote != null)
-                return currentNote.note.colors;
+                return currentNote.note.GetCurrentColors();
         }
         else
         {
@@ -38,19 +73,21 @@ public class Pattern : ScriptableObject
                 if (prevNote != null)
                     return GetLerpColors(time, ballIndex, prevNote, nextNote);
             }
+            else if (currentNote != null)
+            {
+                return currentNote.note.colors;
+            }
         }
-        return Enumerable.Repeat<Color>(Color.black, balls[ballIndex].numLeds).ToArray();
+        return Enumerable.Repeat<Color>(new Color(0,0,0,0.75f), numLeds).ToArray();
     }
 
     public bool CheckLoop(Pattern p)
     {
+        if (this == p)
+            return true;
         foreach (var pp in patternList)
-        {
-            if (pp.pattern == p)
+            if (pp.pattern.CheckLoop(p))
                 return true;
-            if (CheckLoop(p))
-                return true;
-        }
         return false;
     }
     Color[] GetLerpColors(
@@ -74,24 +111,24 @@ public class Pattern : ScriptableObject
             prevTime = prevNote.time,
             nextTime = nextNote.time;
 
-        return (nextTime - time) / (nextTime - prevTime);
+        return (time - prevTime) / (nextTime - prevTime);
     }
     NotePosition GetCurrentNote(float time, int ballIndex)
     {
         return noteList
-            .Where(b => b.ballIndex == ballIndex && b.time < time && time < b.time + b.note.duration)
+            .Where(b => b.ballIndex == ballIndex && b.time <= time && time < b.time + b.note.duration)
             .OrderBy(b => b.time).FirstOrDefault();
     }
     NotePosition GetPrevNote(float time, int ballIndex)
     {
         return noteList
-            .Where(b => b.ballIndex == ballIndex && b.time <= time)
+            .Where(b => b.ballIndex == ballIndex && b.time < time)
             .OrderBy(b => b.time).LastOrDefault();
     }
     NotePosition GetNextNote(float time, int ballIndex)
     {
         return noteList
-            .Where(b => b.ballIndex == ballIndex && time < b.time)
+            .Where(b => b.ballIndex == ballIndex && time <= b.time)
             .OrderBy(b => b.time).FirstOrDefault();
     }
 }

@@ -10,6 +10,13 @@ public class PatternEditorWindow : EditorWindow
     {
         var window = GetWindow<PatternEditorWindow>();
         window.Show();
+        var ptn = window.editingPtn;
+        if (ptn == null)
+            return;
+        foreach (var pp in ptn.patternList)
+            pp.pattern.CreatePatternTex();
+        foreach (var np in ptn.noteList)
+            np.note.CreateNoteTex();
     }
 
 
@@ -104,7 +111,12 @@ public class PatternEditorWindow : EditorWindow
         {
             var pp = editingPtn.patternList[i];
             var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
-            rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, "flow node 1");
+            var style = new GUIStyle();
+            style.normal.background = pp.pattern.patternTex;
+            style.normal.textColor = Color.white;
+            style.active.textColor = Color.red;
+
+            rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, style);
             if (!e.isMouse)
                 SetPatternValWithPos(pp, new Vector2(rct.xMin, rct.yMin));
         }
@@ -112,7 +124,11 @@ public class PatternEditorWindow : EditorWindow
         {
             var np = editingPtn.noteList[i];
             var rct = new Rect(np.time * noteWidth, np.ballIndex * SequencerEditorUtility.noteHeight, np.note.duration * noteWidth, SequencerEditorUtility.noteHeight);
-            rct = GUILayout.Window(i + editingPtn.patternList.Count, rct, NoteWindow, np.note.name, "flow node 1");
+            var style = new GUIStyle();
+            style.normal.background = np.note.noteTex;
+            style.normal.textColor = Color.white;
+            style.active.textColor = Color.red;
+            rct = GUILayout.Window(i + editingPtn.patternList.Count, rct, NoteWindow, np.note.name, style);
             if (!e.isMouse)
                 SetNoteValWithPos(np, new Vector2(rct.xMin, rct.yMin));
         }
@@ -150,6 +166,8 @@ public class PatternEditorWindow : EditorWindow
         if (e.button == 0 && (e.type == EventType.mouseDown))
         {
             activeNode = currentPp;
+            if (e.clickCount == 2)
+                Selection.activeObject = currentPp.pattern;
         }
 
         GUILayout.EndHorizontal();
@@ -190,9 +208,11 @@ public class PatternEditorWindow : EditorWindow
                 var newPtn = pickedObj as Pattern;
                 if (newPtn != null)
                 {
-                    if (editingPtn.CheckLoop(newPtn))
+                    if (newPtn.CheckLoop(editingPtn))
                     {
-                        Debug.Log("new pattern try to add is contains loop!");
+                        Debug.LogWarning("new pattern try to add is contains loop!");
+                        showPicker = false;
+                        mode = 0;
                         Repaint();
                         return;
                     }

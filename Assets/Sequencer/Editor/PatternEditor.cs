@@ -14,8 +14,14 @@ public class PatternEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        var ptn = (Pattern)target;
         DrawDefaultInspector();
-        if (GUILayout.Button("Show Pattern Editor"))
+        EditorGUILayout.LabelField(new GUIContent(ptn.patternTex), GUILayout.Height(ptn.numBalls * ptn.numLeds));
+        if (GUILayout.Button("Show Editor & Refresh"))
+        {
             PatternEditorWindow.ShowWindow();
+            SequencerEditorWindow.ShowWindow();
+            ptn.CreatePatternTex();
+        }
     }
 }

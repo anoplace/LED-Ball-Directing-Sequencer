@@ -11,6 +11,11 @@ public class SequencerEditorWindow : EditorWindow
     {
         var window = GetWindow<SequencerEditorWindow>();
         window.Show();
+        var sq = window.editingSq;
+        if (sq == null)
+            return;
+        foreach (var pp in sq.patternList)
+            pp.pattern.CreatePatternTex();
     }
 
     Sequencer editingSq;
@@ -66,7 +71,7 @@ public class SequencerEditorWindow : EditorWindow
             return;
         }
         editingSq = sq;
-		
+
         DrawSequencerGUI();
     }
     void DrawSequencerGUI()
@@ -74,7 +79,7 @@ public class SequencerEditorWindow : EditorWindow
         Event e = Event.current;
 
         EditorGUILayout.LabelField(editingSq.name);
-		
+
         var scrollHeight = (editingSq.numBalls + 1) * SequencerEditorUtility.noteHeight;
         scrollPos = GUILayout.BeginScrollView(scrollPos, false, false, GUILayout.Height(scrollHeight));
         var scrollWidth = editingSq.length * noteWidth;
@@ -104,7 +109,12 @@ public class SequencerEditorWindow : EditorWindow
         {
             var pp = editingSq.patternList[i];
             var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
-            rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, "flow node 1");
+            var style = new GUIStyle();
+            style.normal.background = pp.pattern.patternTex;
+            style.normal.textColor = Color.white;
+            style.active.textColor = Color.red;
+
+            rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, style);
             if (!e.isMouse)
                 SetPatternValWithPos(pp, new Vector2(rct.xMin, rct.yMin));
         }
@@ -129,6 +139,14 @@ public class SequencerEditorWindow : EditorWindow
         }
         if (e.isKey && (e.keyCode == KeyCode.Backspace || e.keyCode == KeyCode.Delete))
             willDelete = activeNode;
+
+        if (GUILayout.Button("check gui style"))
+        {
+            var style = new GUIStyle("flow node 1");
+            Debug.Log(style.padding);
+            Debug.Log(style.margin);
+            Debug.Log(style.overflow);
+        }
     }
 
     void PatternWindow(int id)
