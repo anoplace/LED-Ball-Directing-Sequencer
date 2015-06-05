@@ -22,6 +22,8 @@ public class SequencerEditorWindow : EditorWindow
 
     object activeNode;
     object willDelete;
+    object willDuplicate;
+    object willCopy;
 
     int mode;
     bool showPicker = false;
@@ -58,42 +60,69 @@ public class SequencerEditorWindow : EditorWindow
         }
         //update is for add and remove nodes
         CheckPicker();
-        if (willDelete == null)
-            return;
-        var deletePtn = willDelete as PatternPosition;
 
-        if (deletePtn != null && editingSq.patternList.Contains(deletePtn))
-            editingSq.patternList.Remove(deletePtn);
-        willDelete = null;
-        Repaint();
+        if (willDuplicate != null)
+        {
+            var duplicatePp = willDuplicate as PatternPosition;
+            willDuplicate = null;
+
+            if (duplicatePp != null)
+            {
+                var newPtn = PatternEditor.Duplicate(duplicatePp.pattern);
+                Selection.activeObject = newPtn;
+
+                var newPp = new PatternPosition();
+                newPp.time = duplicatePp.time + 1f;
+                newPp.ballIndex = duplicatePp.ballIndex;
+                newPp.pattern = newPtn;
+
+                editingSq.patternList.Add(newPp);
+                Repaint();
+            }
+        }
+
+        if (willCopy != null)
+        {
+            var copyPp = willCopy as PatternPosition;
+            willCopy = null;
+
+            if (copyPp != null)
+            {
+                var newPp = new PatternPosition();
+                newPp.time = copyPp.time + 1f;
+                newPp.ballIndex = copyPp.ballIndex;
+                newPp.pattern = copyPp.pattern;
+
+                editingSq.patternList.Add(newPp);
+                Repaint();
+            }
+        }
+
+        if (willDelete != null)
+        {
+            var deletePtn = willDelete as PatternPosition;
+
+            if (deletePtn != null && editingSq.patternList.Contains(deletePtn))
+                editingSq.patternList.Remove(deletePtn);
+            willDelete = null;
+            Repaint();
+        }
     }
     void OnGUI()
     {
+        var sq = Selection.activeObject as Sequencer;
+        if (sq != null)
+            editingSq = sq;
+
+        if (editingSq != null)
+            DrawSequencerGUI();
+
         GUILayout.BeginHorizontal();
         foreach (var o in FindObjectsOfType(typeof(Sequencer)))
             if (editingSq != o)
                 if (GUILayout.Button(o.name))
                     Selection.activeObject = o;
         GUILayout.EndHorizontal();
-        if (Selection.activeGameObject == null)
-        {
-            if (editingSq != null)
-                DrawSequencerGUI();
-            else
-                GUILayout.Label("Select GameObject!!");
-
-            return;
-        }
-        var sq = Selection.activeGameObject.GetComponent<Sequencer>();
-        if (sq == null)
-        {
-            if (GUILayout.Button("Add Sequencer!"))
-                Selection.activeGameObject.AddComponent<Sequencer>();
-            return;
-        }
-        editingSq = sq;
-
-        DrawSequencerGUI();
     }
     void DrawSequencerGUI()
     {
@@ -114,7 +143,6 @@ public class SequencerEditorWindow : EditorWindow
             tmpMousePosition = e.mousePosition;
             var menu = new GenericMenu();
             menu.AddItem(new GUIContent("New Pattern"), false, CreatePattern);
-            menu.AddItem(new GUIContent("Add Pattern"), false, SelectPattern);
             menu.ShowAsContext();
             e.Use();
         }
@@ -125,6 +153,14 @@ public class SequencerEditorWindow : EditorWindow
         Handles.color = Color.gray;
         for (var y = 0; y <= editingSq.numBalls * SequencerEditorUtility.noteHeight; y += (int)SequencerEditorUtility.noteHeight)
             Handles.DrawLine(new Vector3(0, y, 0), new Vector3(scrollWidth, y, 0));
+
+        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+        if (e.type == EventType.DragPerform)
+        {
+            var newPtn = DragAndDrop.objectReferences[0] as Pattern;
+            if (newPtn != null)
+                AddPattern(newPtn, e.mousePosition);
+        }
 
         // 		Patterns and Notes are here!!
         BeginWindows();
@@ -171,6 +207,10 @@ public class SequencerEditorWindow : EditorWindow
         }
         if (e.isKey && (e.keyCode == KeyCode.Backspace || e.keyCode == KeyCode.Delete))
             willDelete = activeNode;
+        if (e.isKey && ((e.control || e.command) && e.keyCode == KeyCode.D))
+            willDuplicate = activeNode;
+        if (e.isKey && ((e.control || e.command) && e.keyCode == KeyCode.C))
+            willCopy = activeNode;
     }
 
     void PatternWindow(int id)
@@ -211,12 +251,7 @@ public class SequencerEditorWindow : EditorWindow
             {
                 var newPtn = pickedObj as Pattern;
                 if (newPtn != null)
-                {
-                    var newPp = new PatternPosition();
-                    newPp.pattern = newPtn;
-                    SetPatternValWithPos(newPp, tmpMousePosition);
-                    editingSq.patternList.Add(newPp);
-                }
+                    AddPattern(newPtn, tmpMousePosition);
                 showPicker = false;
                 mode = 0;
                 Repaint();
@@ -224,35 +259,34 @@ public class SequencerEditorWindow : EditorWindow
         }
     }
 
+    void AddPattern(Pattern p, Vector2 pos)
+    {
+        var newPp = new PatternPosition();
+        newPp.pattern = p;
+        SetPatternValWithPos(newPp, pos);
+        editingSq.patternList.Add(newPp);
+    }
+
     #region GenericMenu Functions
     void CreatePattern()
     {
         Undo.RecordObject(editingSq, "add new pattern");
-        var newPp = new PatternPosition();
-        var newPattern = Pattern.CreateInstance<Pattern>();
-        newPattern.numBalls = editingSq.numBalls;
-        newPattern.numLeds = editingSq.numLeds;
-        newPattern.Init();
+        var newPtn = Pattern.CreateInstance<Pattern>();
+        newPtn.numBalls = editingSq.numBalls;
+        newPtn.numLeds = editingSq.numLeds;
+        newPtn.Init();
 
-        AssetDatabase.CreateAsset(newPattern, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
+        AssetDatabase.CreateAsset(newPtn, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        newPp.pattern = newPattern;
-        SetPatternValWithPos(newPp, tmpMousePosition);
-        editingSq.patternList.Add(newPp);
+        AddPattern(newPtn, tmpMousePosition);
 
-        Selection.activeObject = newPattern;
+        Selection.activeObject = newPtn;
         EditorUtility.SetDirty(editingSq);
         Repaint();
     }
 
-    void SelectPattern()
-    {
-        mode = 1;
-        EditorGUIUtility.ShowObjectPicker<Pattern>(null, false, "", mode);
-        showPicker = true;
-    }
     #endregion
 
     #region Snap node position

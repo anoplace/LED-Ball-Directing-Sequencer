@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class PatternEditorWindow : EditorWindow
 {
 
-	[MenuItem("Window/Pattern Editor")]
+    [MenuItem("Window/Pattern Editor")]
     public static void ShowWindow()
     {
         var window = GetWindow<PatternEditorWindow>();
@@ -25,6 +25,8 @@ public class PatternEditorWindow : EditorWindow
 
     object activeNode;
     object willDelete;
+    object willDuplicate;
+    object willCopy;
 
     int mode;
     bool showPicker = false;
@@ -46,17 +48,81 @@ public class PatternEditorWindow : EditorWindow
     {
         //update is for add and remove nodes
         CheckPicker();
-        if (willDelete == null)
-            return;
-        var deletePtn = willDelete as PatternPosition;
-        var deleteNot = willDelete as NotePosition;
+        if (willDuplicate != null)
+        {
+            var duplicatePp = willDuplicate as PatternPosition;
+            var duplicateNp = willDuplicate as NotePosition;
+            willDuplicate = null;
 
-        if (deletePtn != null && editingPtn.patternList.Contains(deletePtn))
-            editingPtn.patternList.Remove(deletePtn);
-        if (deleteNot != null && editingPtn.noteList.Contains(deleteNot))
-            editingPtn.noteList.Remove(deleteNot);
-        willDelete = null;
-        Repaint();
+            if (duplicatePp != null)
+            {
+                var newPtn = PatternEditor.Duplicate(duplicatePp.pattern);
+
+                var newPp = new PatternPosition();
+                newPp.time = duplicatePp.time + 1f;
+                newPp.ballIndex = duplicatePp.ballIndex;
+                newPp.pattern = newPtn;
+
+                editingPtn.patternList.Add(newPp);
+                Repaint();
+            }
+
+            if (duplicateNp != null)
+            {
+                var newNot = NoteEditor.Duplicate(duplicateNp.note);
+                Selection.activeObject = newNot;
+
+                var newNp = new NotePosition();
+                newNp.time = duplicateNp.time + 1f;
+                newNp.ballIndex = duplicateNp.ballIndex;
+                newNp.note = newNot;
+
+                editingPtn.noteList.Add(newNp);
+                Repaint();
+            }
+        }
+
+        if (willCopy != null)
+        {
+            var CopyPp = willCopy as PatternPosition;
+            var CopyNp = willCopy as NotePosition;
+            willCopy = null;
+
+            if (CopyPp != null)
+            {
+                var newPp = new PatternPosition();
+                newPp.time = CopyPp.time + 1f;
+                newPp.ballIndex = CopyPp.ballIndex;
+                newPp.pattern = CopyPp.pattern;
+
+                editingPtn.patternList.Add(newPp);
+                Repaint();
+            }
+
+            if (CopyNp != null)
+            {
+                var newNp = new NotePosition();
+                newNp.time = CopyNp.time + 1f;
+                newNp.ballIndex = CopyNp.ballIndex;
+                newNp.note = CopyNp.note;
+
+                editingPtn.noteList.Add(newNp);
+                Repaint();
+            }
+        }
+
+        if (willDelete != null)
+        {
+            var deletePtn = willDelete as PatternPosition;
+            var deleteNot = willDelete as NotePosition;
+
+            if (deletePtn != null && editingPtn.patternList.Contains(deletePtn))
+                editingPtn.patternList.Remove(deletePtn);
+            if (deleteNot != null && editingPtn.noteList.Contains(deleteNot))
+                editingPtn.noteList.Remove(deleteNot);
+            willDelete = null;
+            Repaint();
+        }
     }
     void OnGUI()
     {
@@ -93,8 +159,6 @@ public class PatternEditorWindow : EditorWindow
             var menu = new GenericMenu();
             menu.AddItem(new GUIContent("New Pattern"), false, CreatePattern);
             menu.AddItem(new GUIContent("New Note"), false, CreateNote);
-            menu.AddItem(new GUIContent("Add Pattern"), false, SelectPattern);
-            menu.AddItem(new GUIContent("Add Note"), false, SelectNote);
             menu.ShowAsContext();
             e.Use();
         }
@@ -105,6 +169,17 @@ public class PatternEditorWindow : EditorWindow
         Handles.color = Color.gray;
         for (var y = 0; y <= editingPtn.numBalls * SequencerEditorUtility.noteHeight; y += (int)SequencerEditorUtility.noteHeight)
             Handles.DrawLine(new Vector3(0, y, 0), new Vector3(scrollWidth, y, 0));
+
+        DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+        if (e.type == EventType.DragPerform)
+        {
+            var newPtn = DragAndDrop.objectReferences[0] as Pattern;
+            var newNot = DragAndDrop.objectReferences[0] as Note;
+            if (newPtn != null)
+                AddPattern(newPtn, e.mousePosition);
+            if (newNot != null)
+                AddNote(newNot, e.mousePosition);
+        }
 
         // 		Patterns and Notes are here!!
         BeginWindows();
@@ -164,6 +239,10 @@ public class PatternEditorWindow : EditorWindow
         }
         if (e.isKey && (e.keyCode == KeyCode.Backspace || e.keyCode == KeyCode.Delete))
             willDelete = activeNode;
+        if (e.isKey && ((e.control || e.command) && e.keyCode == KeyCode.D))
+            willDuplicate = activeNode;
+        if (e.isKey && ((e.control || e.command) && e.keyCode == KeyCode.C))
+            willCopy = activeNode;
     }
 
     void PatternWindow(int id)
@@ -227,10 +306,7 @@ public class PatternEditorWindow : EditorWindow
                         Repaint();
                         return;
                     }
-                    var newPp = new PatternPosition();
-                    newPp.pattern = newPtn;
-                    SetPatternValWithPos(newPp, tmpMousePosition);
-                    editingPtn.patternList.Add(newPp);
+                    AddPattern(newPtn, tmpMousePosition);
                 }
                 showPicker = false;
                 mode = 0;
@@ -243,12 +319,7 @@ public class PatternEditorWindow : EditorWindow
             {
                 var newNot = pickedObj as Note;
                 if (newNot != null)
-                {
-                    var newNp = new NotePosition();
-                    newNp.note = newNot;
-                    SetNoteValWithPos(newNp, tmpMousePosition);
-                    editingPtn.noteList.Add(newNp);
-                }
+                    AddNote(newNot, tmpMousePosition);
                 showPicker = false;
                 mode = 0;
                 Repaint();
@@ -256,23 +327,35 @@ public class PatternEditorWindow : EditorWindow
         }
     }
 
+    void AddPattern(Pattern p, Vector2 pos)
+    {
+        var newPp = new PatternPosition();
+        newPp.pattern = p;
+        SetPatternValWithPos(newPp, pos);
+        editingPtn.patternList.Add(newPp);
+    }
+    void AddNote(Note n, Vector2 pos)
+    {
+        var newNp = new NotePosition();
+        newNp.note = n;
+        SetNoteValWithPos(newNp, pos);
+        editingPtn.noteList.Add(newNp);
+    }
+
     #region GenericMenu Functions
     void CreatePattern()
     {
         Undo.RecordObject(editingPtn, "add new pattern");
-        var newPp = new PatternPosition();
-        var newPattern = Pattern.CreateInstance<Pattern>();
-        newPattern.numBalls = editingPtn.numBalls;
-        newPattern.numLeds = editingPtn.numLeds;
-        newPattern.Init();
+        var newPtn = Pattern.CreateInstance<Pattern>();
+        newPtn.numBalls = editingPtn.numBalls;
+        newPtn.numLeds = editingPtn.numLeds;
+        newPtn.Init();
 
-        AssetDatabase.CreateAsset(newPattern, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
+        AssetDatabase.CreateAsset(newPtn, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        newPp.pattern = newPattern;
-        SetPatternValWithPos(newPp, tmpMousePosition);
-        editingPtn.patternList.Add(newPp);
+        AddPattern(newPtn, tmpMousePosition);
 
         EditorUtility.SetDirty(editingPtn);
         Repaint();
@@ -280,37 +363,22 @@ public class PatternEditorWindow : EditorWindow
     void CreateNote()
     {
         Undo.RecordObject(editingPtn, "add new note");
-        var newNp = new NotePosition();
-        var newNote = Note.CreateInstance<Note>();
-        newNote.numLeds = editingPtn.numLeds;
-        newNote.gradient = new Gradient();
-        newNote.Init();
+        var newNot = Note.CreateInstance<Note>();
+        newNot.numLeds = editingPtn.numLeds;
+        newNot.gradient = new Gradient();
+        newNot.Init();
 
-        AssetDatabase.CreateAsset(newNote, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Notes/new Note.asset"));
+        AssetDatabase.CreateAsset(newNot, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Notes/new Note.asset"));
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        newNp.note = newNote;
-        SetNoteValWithPos(newNp, tmpMousePosition);
-        editingPtn.noteList.Add(newNp);
+        AddNote(newNot, tmpMousePosition);
 
-        Selection.activeObject = newNote;
+        Selection.activeObject = newNot;
         EditorUtility.SetDirty(editingPtn);
         Repaint();
     }
 
-    void SelectPattern()
-    {
-        mode = 1;
-        EditorGUIUtility.ShowObjectPicker<Pattern>(null, false, "", mode);
-        showPicker = true;
-    }
-    void SelectNote()
-    {
-        mode = 2;
-        EditorGUIUtility.ShowObjectPicker<Note>(null, false, "", mode);
-        showPicker = true;
-    }
     #endregion
 
     #region Snap node position

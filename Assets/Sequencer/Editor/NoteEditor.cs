@@ -6,9 +6,16 @@ using System.Collections.Generic;
 [CustomEditor(typeof(Note))]
 public class NoteEditor : Editor
 {
-    public static void ShowEditorGUI(Note note)
+    public static Note Duplicate(Note n)
     {
+        var newNot = Instantiate(n) as Note;
+        var path = AssetDatabase.GetAssetPath(n);
 
+        AssetDatabase.CreateAsset(newNot, AssetDatabase.GenerateUniqueAssetPath(path));
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        return newNot;
     }
 
     public override void OnInspectorGUI()

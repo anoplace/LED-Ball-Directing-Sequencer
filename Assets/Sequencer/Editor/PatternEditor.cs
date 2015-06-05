@@ -7,9 +7,16 @@ using System.Collections.Generic;
 public class PatternEditor : Editor
 {
 
-    public static void ShowEditorGUI()
+    public static Pattern Duplicate(Pattern p)
     {
+        var newPtn = Instantiate(p) as Pattern;
+        var path = AssetDatabase.GetAssetPath(p);
 
+        AssetDatabase.CreateAsset(newPtn, AssetDatabase.GenerateUniqueAssetPath(path));
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        return newPtn;
     }
 
     public override void OnInspectorGUI()
