@@ -1,0 +1,3 @@
+[submodule "Assets/OSC"]
+	path = Assets/OSC
+	url = https://github.com/nobnak/unity-osc.git
