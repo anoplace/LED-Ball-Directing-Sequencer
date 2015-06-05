@@ -8,6 +8,7 @@ public class Pattern : ScriptableObject
 {
     public float duration = 5f;
     public int numBalls = 10;
+    [HideInInspector]
     public int numLeds = 12;
     public List<PatternPosition> patternList = new List<PatternPosition>();
     public List<NotePosition> noteList = new List<NotePosition>();
@@ -60,8 +61,9 @@ public class Pattern : ScriptableObject
                 b => b.ballIndex <= ballIndex &&
                 ballIndex < b.ballIndex + b.pattern.numBalls &&
                 b.time <= time && time < b.time + b.pattern.duration
-			)
-			.FirstOrDefault();
+            )
+            .OrderBy(b => b.time)
+            .LastOrDefault();
         if (pp != null)
             return pp.pattern.GetColors(time - pp.time, ballIndex - pp.ballIndex);
         var nextNote = GetNextNote(time, ballIndex);
@@ -115,19 +117,22 @@ public class Pattern : ScriptableObject
     {
         return noteList
             .Where(b => b.ballIndex == ballIndex && b.time <= time && time < b.time + b.note.duration)
-            .OrderBy(b => b.time).FirstOrDefault();
+            .OrderBy(b => b.time)
+			.LastOrDefault();
     }
     NotePosition GetPrevNote(float time, int ballIndex)
     {
         return noteList
             .Where(b => b.ballIndex == ballIndex && b.time < time)
-            .OrderBy(b => b.time).LastOrDefault();
+            .OrderBy(b => b.time)
+			.LastOrDefault();
     }
     NotePosition GetNextNote(float time, int ballIndex)
     {
         return noteList
             .Where(b => b.ballIndex == ballIndex && time <= b.time)
-            .OrderBy(b => b.time).FirstOrDefault();
+            .OrderBy(b => b.time)
+			.FirstOrDefault();
     }
 }
 [System.SerializableAttribute]

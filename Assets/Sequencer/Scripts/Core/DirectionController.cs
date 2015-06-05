@@ -20,8 +20,8 @@ public class DirectionController : MonoBehaviour
             {
                 case DirectionType.playSequencer:
                     playingSequencer = d.sequencer;
-                    if (d.aClip != null){
-                        audio.clip = d.aClip;
+                    if (d.sequencer.sound != null){
+                        audio.clip = d.sequencer.sound;
                         audio.Play();
                     }
                     yield return StartCoroutine(playingSequencer.PlayStart());
@@ -47,7 +47,6 @@ public class DirectionController : MonoBehaviour
     {
         public DirectionType type;
         public Sequencer sequencer;
-        public AudioClip aClip;
         public float waitTime = 5f;
         public KeyCode key;
     }

@@ -294,9 +294,9 @@ public class SequencerEditorWindow : EditorWindow
     {
         Undo.RecordObject(editingSq, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        pp.time = Mathf.Max(0, Mathf.Min((float)editingSq.length - 0.25f, pp.time));
+        pp.time = Mathf.Max(0.25f - pp.pattern.duration, Mathf.Min((float)editingSq.duration - 0.25f, pp.time));
         pp.ballIndex = Mathf.FloorToInt(pos.y / SequencerEditorUtility.noteHeight);
-        pp.ballIndex = Mathf.Max(0, Mathf.Min(editingSq.numBalls - 1, pp.ballIndex));
+        pp.ballIndex = Mathf.Max(1 - pp.pattern.numBalls, Mathf.Min(editingSq.numBalls - 1, pp.ballIndex));
         EditorUtility.SetDirty(editingSq);
     }
     #endregion

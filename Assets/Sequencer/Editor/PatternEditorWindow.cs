@@ -386,16 +386,16 @@ public class PatternEditorWindow : EditorWindow
     {
         Undo.RecordObject(editingPtn, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        pp.time = Mathf.Max(0, Mathf.Min((float)editingPtn.duration - 0.25f, pp.time));
+        pp.time = Mathf.Max(0.25f - pp.pattern.duration, Mathf.Min((float)editingPtn.duration - 0.25f, pp.time));
         pp.ballIndex = Mathf.FloorToInt(pos.y / SequencerEditorUtility.noteHeight);
-        pp.ballIndex = Mathf.Max(0, Mathf.Min(editingPtn.numBalls - 1, pp.ballIndex));
+        pp.ballIndex = Mathf.Max(1 - pp.pattern.numBalls, Mathf.Min(editingPtn.numBalls - 1, pp.ballIndex));
         EditorUtility.SetDirty(editingPtn);
     }
     void SetNoteValWithPos(NotePosition np, Vector2 pos)
     {
         Undo.RecordObject(editingPtn, "edit note pos");
         np.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        np.time = Mathf.Max(0, Mathf.Min((float)editingPtn.duration - 0.25f, np.time));
+        np.time = Mathf.Max(0.25f - np.note.duration, Mathf.Min((float)editingPtn.duration - 0.25f, np.time));
         np.ballIndex = Mathf.FloorToInt(pos.y / SequencerEditorUtility.noteHeight);
         np.ballIndex = Mathf.Max(0, Mathf.Min(editingPtn.numBalls - 1, np.ballIndex));
         EditorUtility.SetDirty(editingPtn);

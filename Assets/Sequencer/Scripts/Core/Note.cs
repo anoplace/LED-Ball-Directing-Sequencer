@@ -12,6 +12,7 @@ public class Note : ScriptableObject
     public Gradient gradient;
     public Color[] colors;
     public float shift = 0;
+	[HideInInspector]
     public int numLeds = 12;
     public Texture2D noteTex
     {

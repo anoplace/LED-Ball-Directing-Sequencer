@@ -10,6 +10,7 @@ public class Sequencer : MonoBehaviour
         length = 32,
         numBalls = 10,
         numLeds = 12;
+    public AudioClip sound;
     public float bpm = 80f;
     public float playTime = 0;
     public float duration;
@@ -21,7 +22,10 @@ public class Sequencer : MonoBehaviour
 
     public Color[] GetColors(float time, int ballIndex)
     {
-        var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.duration).FirstOrDefault();
+        var pp = patternList
+            .Where(b => b.time < time && time < b.time + b.pattern.duration)
+            .OrderBy(b => b.time)
+            .LastOrDefault();
         if (pp != null)
             return pp.pattern.GetColors(time - pp.time, ballIndex + pp.ballIndex);
 
@@ -70,7 +74,7 @@ public class Sequencer : MonoBehaviour
             int colorCode = ColorToCode(b.ledColors[i]);
             MessageEncoder me = new MessageEncoder(ledAddress);
             me.Add(colorCode);
-//             Debug.Log(ledAddress + ", " + colorCode);
+            //             Debug.Log(ledAddress + ", " + colorCode);
             oscSender.Send(me);
         }
     }
