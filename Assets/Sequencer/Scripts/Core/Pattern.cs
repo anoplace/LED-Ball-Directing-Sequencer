@@ -40,7 +40,8 @@ public class Pattern : ScriptableObject
                 for (var n = 0; n < numLeds; n++)//num leds
                 {
                     var y = i * numLeds + n;
-                    _tex.SetPixel(x, y, ballColors[n]);
+                    _tex.SetPixel(x, numLeds * numBalls - y - 1, ballColors[n]);
+                    //EditorWindow上では、下が０、上が１になるので、y=1-yで上下反転
                 }
             }
         }
@@ -56,29 +57,20 @@ public class Pattern : ScriptableObject
     {
         var pp = patternList.Where(b => b.time < time && time < b.time + b.pattern.duration).FirstOrDefault();
         if (pp != null)
-            return pp.pattern.GetColors(time - pp.time, ballIndex + pp.ballIndex);
+            return pp.pattern.GetColors(time - pp.time, ballIndex - pp.ballIndex);
         var nextNote = GetNextNote(time, ballIndex);
         var currentNote = GetCurrentNote(time, ballIndex);
         var prevNote = GetPrevNote(time, ballIndex);
 
-        if (nextNote == null)
-        {
-            if (currentNote != null)
-                return currentNote.note.GetCurrentColors();
-        }
-        else
-        {
+        if (nextNote != null)
             if (nextNote.note.interpolationType == Note.Interpolation.lerp)
-            {
                 if (prevNote != null)
                     return GetLerpColors(time, ballIndex, prevNote, nextNote);
-            }
-            else if (currentNote != null)
-            {
-                return currentNote.note.colors;
-            }
-        }
-        return Enumerable.Repeat<Color>(new Color(0,0,0,0.75f), numLeds).ToArray();
+
+        if (currentNote != null)
+            return currentNote.note.GetCurrentColors();
+
+        return Enumerable.Repeat<Color>(new Color(0, 0, 0, 0.75f), numLeds).ToArray();
     }
 
     public bool CheckLoop(Pattern p)

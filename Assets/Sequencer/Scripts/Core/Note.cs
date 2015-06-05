@@ -36,7 +36,8 @@ public class Note : ScriptableObject
         {
             for (var y = 0; y < height; y++)
             {
-                _tex.SetPixel(x, y, GetCurrentColors()[y] * ((x % 2 == 0 && interpolationType == Interpolation.lerp) ? 0.75f : 1f));
+                _tex.SetPixel(x, height - y - 1, GetCurrentColors()[y] * ((x % 2 == 0 && interpolationType == Interpolation.lerp) ? 0.75f : 1f));
+				//EditorWindow上では、下が０、上が１になるので、y=1-yで上下反転
     }
     _tex.Apply();
             _tex.hideFlags = HideFlags.HideAndDontSave;
@@ -54,8 +55,8 @@ void SetColors()
     {
         for (var i = 0; i < colors.Length; i++)
         {
-            float t = ((float)i / (float)colors.Length + shift) % 1f;
-            colors[i] = gradient.Evaluate(t);
+                float t = ((float)i / (float)colors.Length + shift) % 1f;
+                colors[i] = gradient.Evaluate(t);
         }
     }
     else if (useSingleColor)

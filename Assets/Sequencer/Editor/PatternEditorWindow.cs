@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public class PatternEditorWindow : EditorWindow
 {
 
+	[MenuItem("Window/Pattern Editor")]
     public static void ShowWindow()
     {
         var window = GetWindow<PatternEditorWindow>();
@@ -41,7 +42,7 @@ public class PatternEditorWindow : EditorWindow
     }
 
     // Update is called once per frame
-    void Update()
+    void OnInspectorUpdate()
     {
         //update is for add and remove nodes
         CheckPicker();
@@ -100,7 +101,7 @@ public class PatternEditorWindow : EditorWindow
 
         Handles.color = Color.white;
         for (var x = 0; x < scrollWidth; x = x + (int)noteWidth)
-            Handles.DrawLine(new Vector3(x, 0, 0), new Vector3(x, 1000, 0));
+            Handles.DrawLine(new Vector3(x, 0, 0), new Vector3(x, SequencerEditorUtility.noteHeight * editingPtn.numBalls, 0));
         Handles.color = Color.gray;
         for (var y = 0; y <= editingPtn.numBalls * SequencerEditorUtility.noteHeight; y += (int)SequencerEditorUtility.noteHeight)
             Handles.DrawLine(new Vector3(0, y, 0), new Vector3(scrollWidth, y, 0));
@@ -110,6 +111,11 @@ public class PatternEditorWindow : EditorWindow
         for (var i = 0; i < editingPtn.patternList.Count; i++)
         {
             var pp = editingPtn.patternList[i];
+            if (pp.pattern == null)
+            {
+                editingPtn.patternList.Remove(pp);
+                continue;
+            }
             var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
             var style = new GUIStyle();
             style.normal.background = pp.pattern.patternTex;
@@ -123,6 +129,11 @@ public class PatternEditorWindow : EditorWindow
         for (var i = 0; i < editingPtn.noteList.Count; i++)
         {
             var np = editingPtn.noteList[i];
+            if (np.note == null)
+            {
+                editingPtn.noteList.Remove(np);
+                continue;
+            }
             var rct = new Rect(np.time * noteWidth, np.ballIndex * SequencerEditorUtility.noteHeight, np.note.duration * noteWidth, SequencerEditorUtility.noteHeight);
             var style = new GUIStyle();
             style.normal.background = np.note.noteTex;
@@ -252,6 +263,7 @@ public class PatternEditorWindow : EditorWindow
         var newPp = new PatternPosition();
         var newPattern = Pattern.CreateInstance<Pattern>();
         newPattern.numBalls = editingPtn.numBalls;
+        newPattern.numLeds = editingPtn.numLeds;
         newPattern.Init();
 
         AssetDatabase.CreateAsset(newPattern, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
@@ -262,7 +274,6 @@ public class PatternEditorWindow : EditorWindow
         SetPatternValWithPos(newPp, tmpMousePosition);
         editingPtn.patternList.Add(newPp);
 
-        Selection.activeObject = newPattern;
         EditorUtility.SetDirty(editingPtn);
         Repaint();
     }
@@ -271,6 +282,8 @@ public class PatternEditorWindow : EditorWindow
         Undo.RecordObject(editingPtn, "add new note");
         var newNp = new NotePosition();
         var newNote = Note.CreateInstance<Note>();
+        newNote.numLeds = editingPtn.numLeds;
+        newNote.gradient = new Gradient();
         newNote.Init();
 
         AssetDatabase.CreateAsset(newNote, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Notes/new Note.asset"));

@@ -22,5 +22,11 @@ public class NoteEditor : Editor
             SequencerEditorWindow.ShowWindow();
             not.CreateNoteTex();
         }
+        if (GUI.changed)
+            not.CreateNoteTex();
+    }
+    void DrawNoteInspector()
+    {
+
     }
 }

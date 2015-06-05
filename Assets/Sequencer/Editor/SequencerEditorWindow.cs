@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class SequencerEditorWindow : EditorWindow
 {
 
-    // Use this for initialization
+    [MenuItem("Window/Sequence Editor")]
     public static void ShowWindow()
     {
         var window = GetWindow<SequencerEditorWindow>();
@@ -37,10 +37,25 @@ public class SequencerEditorWindow : EditorWindow
             return (int)(zoom * (float)SequencerEditorUtility.noteWidth);
         }
     }
+    DirectionController controller
+    {
+        get
+        {
+            if (_dcon == null)
+                _dcon = FindObjectOfType(typeof(DirectionController)) as DirectionController;
+            return _dcon;
+        }
+    }
+    DirectionController _dcon;
 
     // Update is called once per frame
-    void Update()
+    void OnInspectorUpdate()
     {
+        if (EditorApplication.isPlaying && !EditorApplication.isPaused)
+        {
+            Selection.activeObject = controller.playingSequencer;
+            Repaint();
+        }
         //update is for add and remove nodes
         CheckPicker();
         if (willDelete == null)
@@ -54,6 +69,12 @@ public class SequencerEditorWindow : EditorWindow
     }
     void OnGUI()
     {
+        GUILayout.BeginHorizontal();
+        foreach (var o in FindObjectsOfType(typeof(Sequencer)))
+            if (editingSq != o)
+                if (GUILayout.Button(o.name))
+                    Selection.activeObject = o;
+        GUILayout.EndHorizontal();
         if (Selection.activeGameObject == null)
         {
             if (editingSq != null)
@@ -82,6 +103,8 @@ public class SequencerEditorWindow : EditorWindow
 
         var scrollHeight = (editingSq.numBalls + 1) * SequencerEditorUtility.noteHeight;
         scrollPos = GUILayout.BeginScrollView(scrollPos, false, false, GUILayout.Height(scrollHeight));
+        if (EditorApplication.isPlaying && !EditorApplication.isPaused)
+            scrollPos.x = (editingSq.playTime - 0.5f) * SequencerEditorUtility.noteWidth;
         var scrollWidth = editingSq.length * noteWidth;
         GUILayout.BeginHorizontal(GUILayout.Width(scrollWidth));
         GUILayout.FlexibleSpace();
@@ -98,7 +121,7 @@ public class SequencerEditorWindow : EditorWindow
 
         Handles.color = Color.white;
         for (var x = 0; x < scrollWidth; x = x + (int)noteWidth)
-            Handles.DrawLine(new Vector3(x, 0, 0), new Vector3(x, 1000, 0));
+            Handles.DrawLine(new Vector3(x, 0, 0), new Vector3(x, SequencerEditorUtility.noteHeight * editingSq.numBalls, 0));
         Handles.color = Color.gray;
         for (var y = 0; y <= editingSq.numBalls * SequencerEditorUtility.noteHeight; y += (int)SequencerEditorUtility.noteHeight)
             Handles.DrawLine(new Vector3(0, y, 0), new Vector3(scrollWidth, y, 0));
@@ -108,6 +131,10 @@ public class SequencerEditorWindow : EditorWindow
         for (var i = 0; i < editingSq.patternList.Count; i++)
         {
             var pp = editingSq.patternList[i];
+            if (pp.pattern == null)
+            {
+                editingSq.patternList.Remove(pp);
+            }
             var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
             var style = new GUIStyle();
             style.normal.background = pp.pattern.patternTex;
@@ -119,6 +146,11 @@ public class SequencerEditorWindow : EditorWindow
                 SetPatternValWithPos(pp, new Vector2(rct.xMin, rct.yMin));
         }
         EndWindows();
+        Handles.color = Color.red;
+        Handles.DrawLine(
+            new Vector2(editingSq.playTime * SequencerEditorUtility.noteWidth, 0),
+            new Vector2(editingSq.playTime * SequencerEditorUtility.noteWidth, editingSq.numBalls * SequencerEditorUtility.noteHeight)
+            );
 
         GUILayout.EndHorizontal();
         GUILayout.EndScrollView();
@@ -139,14 +171,6 @@ public class SequencerEditorWindow : EditorWindow
         }
         if (e.isKey && (e.keyCode == KeyCode.Backspace || e.keyCode == KeyCode.Delete))
             willDelete = activeNode;
-
-        if (GUILayout.Button("check gui style"))
-        {
-            var style = new GUIStyle("flow node 1");
-            Debug.Log(style.padding);
-            Debug.Log(style.margin);
-            Debug.Log(style.overflow);
-        }
     }
 
     void PatternWindow(int id)
@@ -161,6 +185,11 @@ public class SequencerEditorWindow : EditorWindow
         {
             Selection.activeObject = currentPp.pattern;
             activeNode = currentPp;
+            if (e.clickCount == 2)
+            {
+                PatternEditorWindow.ShowWindow();
+                SequencerEditorWindow.ShowWindow();
+            }
         }
 
         GUILayout.EndHorizontal();
@@ -202,6 +231,7 @@ public class SequencerEditorWindow : EditorWindow
         var newPp = new PatternPosition();
         var newPattern = Pattern.CreateInstance<Pattern>();
         newPattern.numBalls = editingSq.numBalls;
+        newPattern.numLeds = editingSq.numLeds;
         newPattern.Init();
 
         AssetDatabase.CreateAsset(newPattern, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/Patterns/new Pattern.asset"));
