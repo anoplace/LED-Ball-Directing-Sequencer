@@ -14,10 +14,10 @@ public class Sequencer : MonoBehaviour
     public float bpm = 80f;
     public float playTime = 0;
     public List<PatternPosition> patternList = new List<PatternPosition>();
-    public Ball[] balls;
     [SerializeField]
     float timeDuration;
 
+    Ball[] balls;
     OscSender oscSender;
     Anoball[] anoballs;
 
