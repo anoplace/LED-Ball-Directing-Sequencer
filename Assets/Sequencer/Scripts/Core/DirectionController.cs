@@ -7,6 +7,10 @@ public class DirectionController : MonoBehaviour
     public Direction[] directions;
     public Sequencer playingSequencer;
 
+    void Awake()
+    {
+        Application.targetFrameRate = 30;
+    }
 
     // Use this for initialization
     IEnumerator Start()

@@ -30,7 +30,11 @@ public class NoteEditor : Editor
             not.CreateNoteTex();
         }
         if (GUI.changed)
+        {
+            Undo.RecordObject(not,"note property changed");
             not.CreateNoteTex();
+            EditorUtility.SetDirty(not);
+        }
     }
     void DrawNoteInspector()
     {

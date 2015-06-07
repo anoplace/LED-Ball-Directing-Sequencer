@@ -6,16 +6,17 @@ using Osc;
 
 public class Sequencer : MonoBehaviour
 {
-    public int
-        length = 32,
-        numBalls = 10,
-        numLeds = 12;
+    public int duration = 585;
+    public int numBalls = 10;
+    public int numLeds = 12;
     public AudioClip sound;
+    public float startDelay = 0;
     public float bpm = 80f;
     public float playTime = 0;
-    public float duration;
     public List<PatternPosition> patternList = new List<PatternPosition>();
     public Ball[] balls;
+    [SerializeField]
+    float timeDuration;
 
     OscSender oscSender;
     Anoball[] anoballs;
@@ -34,7 +35,7 @@ public class Sequencer : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        duration = (float)length * (60f / bpm);
+        timeDuration = (float)duration * (60f / bpm);
         balls = new Ball[numBalls];
         for (var i = 0; i < numBalls; i++)
         {
@@ -44,15 +45,19 @@ public class Sequencer : MonoBehaviour
         oscSender = FindObjectOfType(typeof(OscSender)) as OscSender;
         anoballs = FindObjectsOfType(typeof(Anoball)) as Anoball[];
         anoballs = anoballs.OrderBy(b => b.name).ToArray();
+
+        Debug.Log(ColorToCode(Color.white));
     }
 
 
     public IEnumerator PlayStart()
     {
         playTime = 0;
-        while (playTime < length)
+        yield return new WaitForSeconds(startDelay);
+        while (playTime < duration)
         {
             playTime += Time.deltaTime * (bpm / 60f);
+            playTime += Input.GetAxis("Horizontal") * 0.1f;
             for (var i = 0; i < numBalls; i++)
             {
                 var b = balls[i];
@@ -67,16 +72,12 @@ public class Sequencer : MonoBehaviour
 
     void SendOSC(Ball b)
     {
-        var ballAddress = "/ball" + b.id.ToString();
+        var address = "/ball/" + b.id;
+        var me = new MessageEncoder(address);
+
         for (var i = 0; i < b.ledColors.Length; i++)
-        {
-            var ledAddress = ballAddress + "/" + i.ToString();
-            int colorCode = ColorToCode(b.ledColors[i]);
-            MessageEncoder me = new MessageEncoder(ledAddress);
-            me.Add(colorCode);
-            //             Debug.Log(ledAddress + ", " + colorCode);
-            oscSender.Send(me);
-        }
+            me.Add(ColorToCode(b.ledColors[i]));
+        oscSender.Send(me);
     }
     int ColorToCode(Color c)
     {

@@ -77,6 +77,7 @@ public class SequencerEditorWindow : EditorWindow
                 newPp.pattern = newPtn;
 
                 editingSq.patternList.Add(newPp);
+                activeNode = newPp;
                 Repaint();
             }
         }
@@ -94,6 +95,7 @@ public class SequencerEditorWindow : EditorWindow
                 newPp.pattern = copyPp.pattern;
 
                 editingSq.patternList.Add(newPp);
+                activeNode = newPp;
                 Repaint();
             }
         }
@@ -133,8 +135,8 @@ public class SequencerEditorWindow : EditorWindow
         var scrollHeight = (editingSq.numBalls + 1) * SequencerEditorUtility.noteHeight;
         scrollPos = GUILayout.BeginScrollView(scrollPos, false, false, GUILayout.Height(scrollHeight));
         if (EditorApplication.isPlaying && !EditorApplication.isPaused)
-            scrollPos.x = (editingSq.playTime - 0.5f) * SequencerEditorUtility.noteWidth;
-        var scrollWidth = editingSq.length * noteWidth;
+            scrollPos.x = (editingSq.playTime - 5f) * SequencerEditorUtility.noteWidth;
+        var scrollWidth = editingSq.duration * noteWidth;
         GUILayout.BeginHorizontal(GUILayout.Width(scrollWidth));
         GUILayout.FlexibleSpace();
 
@@ -174,10 +176,12 @@ public class SequencerEditorWindow : EditorWindow
             var rct = new Rect(pp.time * noteWidth, pp.ballIndex * SequencerEditorUtility.noteHeight, pp.pattern.duration * noteWidth, pp.pattern.numBalls * SequencerEditorUtility.noteHeight);
             var style = new GUIStyle();
             style.normal.background = pp.pattern.patternTex;
+            style.wordWrap = true;
             style.normal.textColor = Color.white;
-            style.active.textColor = Color.red;
+            if (activeNode == pp)
+                style.normal.textColor = Color.red;
 
-            rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, style);
+            rct = GUILayout.Window(i, rct, PatternWindow, pp.time + " (" + pp.time * (60f / editingSq.bpm) + "): " + pp.pattern.name, style);
             if (!e.isMouse)
                 SetPatternValWithPos(pp, new Vector2(rct.xMin, rct.yMin));
         }

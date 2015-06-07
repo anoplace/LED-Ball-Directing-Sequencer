@@ -41,7 +41,8 @@ public class Pattern : ScriptableObject
                 for (var n = 0; n < numLeds; n++)//num leds
                 {
                     var y = i * numLeds + n;
-                    _tex.SetPixel(x, numLeds * numBalls - y - 1, ballColors[n]);
+                    var edge = (x == 0) || (x == width - 1) || (y == 0) || (y == height - 1);
+                    _tex.SetPixel(x, numLeds * numBalls - y - 1, Color.Lerp(ballColors[n], Color.white, edge ? 0.5f : 0));
                     //EditorWindow上では、下が０、上が１になるので、y=1-yで上下反転
                 }
             }
@@ -56,16 +57,6 @@ public class Pattern : ScriptableObject
     //colors for LEDs of ball
     public Color[] GetColors(float time, int ballIndex)
     {
-        var pp = patternList
-            .Where(
-                b => b.ballIndex <= ballIndex &&
-                ballIndex < b.ballIndex + b.pattern.numBalls &&
-                b.time <= time && time < b.time + b.pattern.duration
-            )
-            .OrderBy(b => b.time)
-            .LastOrDefault();
-        if (pp != null)
-            return pp.pattern.GetColors(time - pp.time, ballIndex - pp.ballIndex);
         var nextNote = GetNextNote(time, ballIndex);
         var currentNote = GetCurrentNote(time, ballIndex);
         var prevNote = GetPrevNote(time, ballIndex);
@@ -77,6 +68,17 @@ public class Pattern : ScriptableObject
 
         if (currentNote != null)
             return currentNote.note.GetCurrentColors();
+
+        var pp = patternList
+            .Where(
+                b => b.ballIndex <= ballIndex &&
+                ballIndex < b.ballIndex + b.pattern.numBalls &&
+                b.time <= time && time < b.time + b.pattern.duration
+            )
+            .OrderBy(b => b.time)
+            .LastOrDefault();
+        if (pp != null)
+            return pp.pattern.GetColors(time - pp.time, ballIndex - pp.ballIndex);
 
         return Enumerable.Repeat<Color>(new Color(0, 0, 0, 0.75f), numLeds).ToArray();
     }
@@ -118,21 +120,21 @@ public class Pattern : ScriptableObject
         return noteList
             .Where(b => b.ballIndex == ballIndex && b.time <= time && time < b.time + b.note.duration)
             .OrderBy(b => b.time)
-			.LastOrDefault();
+            .LastOrDefault();
     }
     NotePosition GetPrevNote(float time, int ballIndex)
     {
         return noteList
             .Where(b => b.ballIndex == ballIndex && b.time < time)
             .OrderBy(b => b.time)
-			.LastOrDefault();
+            .LastOrDefault();
     }
     NotePosition GetNextNote(float time, int ballIndex)
     {
         return noteList
             .Where(b => b.ballIndex == ballIndex && time <= b.time)
             .OrderBy(b => b.time)
-			.FirstOrDefault();
+            .FirstOrDefault();
     }
 }
 [System.SerializableAttribute]

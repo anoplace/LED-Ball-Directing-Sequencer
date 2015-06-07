@@ -64,6 +64,7 @@ public class PatternEditorWindow : EditorWindow
                 newPp.pattern = newPtn;
 
                 editingPtn.patternList.Add(newPp);
+                activeNode = newPp;
                 Repaint();
             }
 
@@ -78,6 +79,7 @@ public class PatternEditorWindow : EditorWindow
                 newNp.note = newNot;
 
                 editingPtn.noteList.Add(newNp);
+                activeNode = newNp;
                 Repaint();
             }
         }
@@ -96,6 +98,7 @@ public class PatternEditorWindow : EditorWindow
                 newPp.pattern = CopyPp.pattern;
 
                 editingPtn.patternList.Add(newPp);
+                activeNode = newPp;
                 Repaint();
             }
 
@@ -107,6 +110,7 @@ public class PatternEditorWindow : EditorWindow
                 newNp.note = CopyNp.note;
 
                 editingPtn.noteList.Add(newNp);
+                activeNode = newNp;
                 Repaint();
             }
         }
@@ -195,7 +199,8 @@ public class PatternEditorWindow : EditorWindow
             var style = new GUIStyle();
             style.normal.background = pp.pattern.patternTex;
             style.normal.textColor = Color.white;
-            style.active.textColor = Color.red;
+            if (activeNode == pp)
+                style.normal.textColor = Color.red;
 
             rct = GUILayout.Window(i, rct, PatternWindow, pp.pattern.name, style);
             if (!e.isMouse)
@@ -213,7 +218,8 @@ public class PatternEditorWindow : EditorWindow
             var style = new GUIStyle();
             style.normal.background = np.note.noteTex;
             style.normal.textColor = Color.white;
-            style.active.textColor = Color.red;
+            if (activeNode == np)
+                style.normal.textColor = Color.red;
             rct = GUILayout.Window(i + editingPtn.patternList.Count, rct, NoteWindow, np.note.name, style);
             if (!e.isMouse)
                 SetNoteValWithPos(np, new Vector2(rct.xMin, rct.yMin));
@@ -298,14 +304,6 @@ public class PatternEditorWindow : EditorWindow
                 var newPtn = pickedObj as Pattern;
                 if (newPtn != null)
                 {
-                    if (newPtn.CheckLoop(editingPtn))
-                    {
-                        Debug.LogWarning("new pattern try to add is contains loop!");
-                        showPicker = false;
-                        mode = 0;
-                        Repaint();
-                        return;
-                    }
                     AddPattern(newPtn, tmpMousePosition);
                 }
                 showPicker = false;
@@ -329,6 +327,14 @@ public class PatternEditorWindow : EditorWindow
 
     void AddPattern(Pattern p, Vector2 pos)
     {
+        if (p.CheckLoop(editingPtn))
+        {
+            Debug.LogWarning("new pattern try to add is contains loop!");
+            showPicker = false;
+            mode = 0;
+            Repaint();
+            return;
+        }
         var newPp = new PatternPosition();
         newPp.pattern = p;
         SetPatternValWithPos(newPp, pos);
