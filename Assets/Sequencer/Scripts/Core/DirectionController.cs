@@ -9,7 +9,8 @@ public class DirectionController : MonoBehaviour
 
     void Awake()
     {
-        Application.targetFrameRate = 30;
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 15;
     }
 
     // Use this for initialization
