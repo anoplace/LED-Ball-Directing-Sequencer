@@ -215,6 +215,7 @@ public class SequencerEditorWindow : EditorWindow
             willDuplicate = activeNode;
         if (e.isKey && ((e.control || e.command) && e.keyCode == KeyCode.C))
             willCopy = activeNode;
+        	
     }
 
     void PatternWindow(int id)
