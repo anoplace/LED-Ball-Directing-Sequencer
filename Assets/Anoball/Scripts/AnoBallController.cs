@@ -58,7 +58,7 @@ public class AnoBallController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Return))
             {
                 StopAllCoroutines();
-                StartCoroutine(SyncGradientToNext(bpmDuration));
+                StartCoroutine(SyncGradientToNext(bpmDuration, Input.GetKey(KeyCode.RightShift)));
             }
             if (Input.GetKeyDown(KeyCode.Q))
             {
@@ -69,7 +69,10 @@ public class AnoBallController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.C))
                 gradientDelta = 0;
             if (Input.GetKeyDown(KeyCode.F))
-                FadeOut(bpmDuration);
+            {
+                StopAllCoroutines();
+                StartCoroutine(FadeOut(bpmDuration));
+            }
 
             if (Input.GetKeyDown(KeyCode.Alpha1))
                 ctrlDuration = 1;
@@ -103,36 +106,15 @@ public class AnoBallController : MonoBehaviour
         return cs;
     }
 
-    IEnumerator SyncColorToNext(float duration)
-    {
-        var delta = 0.05f;
-        ColorForward();
-        var nextColors = Enumerable.Repeat<Color>(GetColor(currentColorIndex), numLeds).ToArray();
-        for (var i = 0; i < numBalls; i++)
-        {
-            oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration - delta * (float)i), i);
-            yield return new WaitForSeconds(delta);
-        }
-    }
-    IEnumerator OrderColorToNext(float delta, float duration)
-    {
-        ColorForward();
-        for (var i = 0; i < numBalls; i++)
-        {
-            var nextColors = Enumerable.Repeat<Color>(GetColor(currentColorIndex + i), numLeds).ToArray();
-            oscController.SendToBall(nextColors, duration, i);
-            yield return new WaitForSeconds(delta);
-        }
-    }
-
-    IEnumerator SyncGradientToNext(float duration)
+    IEnumerator SyncGradientToNext(float duration, bool changeHalf = false)
     {
         var delta = 0.05f;
         ColorForward();
         var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
         for (var i = 0; i < numBalls; i++)
         {
-            oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration - delta * (float)i), i);
+            if (changeHalf && i % 2 == currentColorIndex % 2)
+                oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration - delta * (float)i), i);
             yield return new WaitForSeconds(delta);
         }
     }
