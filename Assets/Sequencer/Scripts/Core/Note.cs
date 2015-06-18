@@ -12,7 +12,7 @@ public class Note : ScriptableObject
     public Gradient gradient;
     public Color[] colors;
     public float shift = 0;
-	[HideInInspector]
+    [HideInInspector]
     public int numLeds = 12;
     public Texture2D noteTex
     {
@@ -38,47 +38,43 @@ public class Note : ScriptableObject
             for (var y = 0; y < height; y++)
             {
                 _tex.SetPixel(x, height - y - 1, GetCurrentColors()[y] * ((x % 2 == 0 && interpolationType == Interpolation.lerp) ? 0.75f : 1f));
-				//EditorWindow上では、下が０、上が１になるので、y=1-yで上下反転
-    }
-    _tex.Apply();
+                //EditorWindow上では、下が０、上が１になるので、y=1-yで上下反転
+            }
+            _tex.Apply();
             _tex.hideFlags = HideFlags.HideAndDontSave;
         }
     }
-    public void Init()
-{
-    colors = new Color[numLeds];
-}
 
 
-void SetColors()
-{
-    if (useGradient)
+    void SetColors()
     {
-        for (var i = 0; i < colors.Length; i++)
+        if (useGradient)
         {
+            for (var i = 0; i < colors.Length; i++)
+            {
                 float t = ((float)i / (float)colors.Length + shift) % 1f;
                 colors[i] = gradient.Evaluate(t);
+            }
+        }
+        else if (useSingleColor)
+        {
+            for (var i = 0; i < colors.Length; i++)
+            {
+                colors[i] = colors[0];
+            }
         }
     }
-    else if (useSingleColor)
+    public Color[] GetCurrentColors()
     {
         for (var i = 0; i < colors.Length; i++)
-        {
-            colors[i] = colors[0];
-        }
+            colors[i].a = 0.75f;
+        return colors;
     }
-}
-public Color[] GetCurrentColors()
-{
-    for (var i = 0; i < colors.Length; i++)
-        colors[i].a = 0.75f;
-    return colors;
-}
-public enum Interpolation
-{
-    lerp = 0,
-    flat = 1,
-}
+    public enum Interpolation
+    {
+        lerp = 0,
+        flat = 1,
+    }
 }
 [System.SerializableAttribute]
 public class NotePosition

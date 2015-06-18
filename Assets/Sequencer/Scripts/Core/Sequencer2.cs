@@ -4,8 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Osc;
 
-public class Sequencer : MonoBehaviour
-{
+public class Sequencer2 : MonoBehaviour {
     public int duration = 585;
     public int numBalls = 10;
     public int numLeds = 12;
@@ -13,8 +12,9 @@ public class Sequencer : MonoBehaviour
     public float startDelay = 0;
     public float bpm = 80f;
     public float playTime = 0;
-    public List<PatternPosition> patternList = new List<PatternPosition>();
+    public List<PatternPosition2> patternList = new List<PatternPosition2>();
     public AnimationCurve blightCurve;
+    public ColorPallet pallet;
 
     [SerializeField]
     float timeDuration;

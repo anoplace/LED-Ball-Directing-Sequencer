@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System.Collections;
-using System.Collections.Generic;
 
-public class PatternEditorWindow : EditorWindow
-{
+public class Pattern2EditorWindow : EditorWindow {
 
-    [MenuItem("Window/Pattern Editor")]
+    [MenuItem("Window/Pattern2 Editor")]
     public static void ShowWindow()
     {
-        var window = GetWindow<PatternEditorWindow>();
+        var window = GetWindow<Pattern2EditorWindow>();
         window.Show();
         var ptn = window.editingPtn;
         if (ptn == null)
@@ -21,7 +19,7 @@ public class PatternEditorWindow : EditorWindow
     }
 
 
-    Pattern editingPtn;
+    Pattern2 editingPtn;
 
     object activeNode;
     object willDelete;
@@ -50,15 +48,15 @@ public class PatternEditorWindow : EditorWindow
         CheckPicker();
         if (willDuplicate != null)
         {
-            var duplicatePp = willDuplicate as PatternPosition;
-            var duplicateNp = willDuplicate as NotePosition;
+            var duplicatePp = willDuplicate as PatternPosition2;
+            var duplicateNp = willDuplicate as NotePosition2;
             willDuplicate = null;
 
             if (duplicatePp != null)
             {
-                var newPtn = PatternEditor.Duplicate(duplicatePp.pattern);
+                var newPtn = Pattern2Editor.Duplicate(duplicatePp.pattern);
 
-                var newPp = new PatternPosition();
+                var newPp = new PatternPosition2();
                 newPp.time = duplicatePp.time + 1f;
                 newPp.ballIndex = duplicatePp.ballIndex;
                 newPp.pattern = newPtn;
@@ -70,10 +68,10 @@ public class PatternEditorWindow : EditorWindow
 
             if (duplicateNp != null)
             {
-                var newNot = NoteEditor.Duplicate(duplicateNp.note);
+                var newNot = Note2Editor.Duplicate(duplicateNp.note);
                 Selection.activeObject = newNot;
 
-                var newNp = new NotePosition();
+                var newNp = new NotePosition2();
                 newNp.time = duplicateNp.time + 1f;
                 newNp.ballIndex = duplicateNp.ballIndex;
                 newNp.note = newNot;
@@ -86,13 +84,13 @@ public class PatternEditorWindow : EditorWindow
 
         if (willCopy != null)
         {
-            var CopyPp = willCopy as PatternPosition;
-            var CopyNp = willCopy as NotePosition;
+            var CopyPp = willCopy as PatternPosition2;
+            var CopyNp = willCopy as NotePosition2;
             willCopy = null;
 
             if (CopyPp != null)
             {
-                var newPp = new PatternPosition();
+                var newPp = new PatternPosition2();
                 newPp.time = CopyPp.time + 1f;
                 newPp.ballIndex = CopyPp.ballIndex;
                 newPp.pattern = CopyPp.pattern;
@@ -104,7 +102,7 @@ public class PatternEditorWindow : EditorWindow
 
             if (CopyNp != null)
             {
-                var newNp = new NotePosition();
+                var newNp = new NotePosition2();
                 newNp.time = CopyNp.time + 1f;
                 newNp.ballIndex = CopyNp.ballIndex;
                 newNp.note = CopyNp.note;
@@ -117,8 +115,8 @@ public class PatternEditorWindow : EditorWindow
 
         if (willDelete != null)
         {
-            var deletePtn = willDelete as PatternPosition;
-            var deleteNot = willDelete as NotePosition;
+            var deletePtn = willDelete as PatternPosition2;
+            var deleteNot = willDelete as NotePosition2;
 
             if (deletePtn != null && editingPtn.patternList.Contains(deletePtn))
                 editingPtn.patternList.Remove(deletePtn);
@@ -130,7 +128,7 @@ public class PatternEditorWindow : EditorWindow
     }
     void OnGUI()
     {
-        var selecting = Selection.activeObject as Pattern;
+        var selecting = Selection.activeObject as Pattern2;
         if (selecting == null)
         {
             if (editingPtn != null)
@@ -177,8 +175,8 @@ public class PatternEditorWindow : EditorWindow
         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
         if (e.type == EventType.DragPerform)
         {
-            var newPtn = DragAndDrop.objectReferences[0] as Pattern;
-            var newNot = DragAndDrop.objectReferences[0] as Note;
+            var newPtn = DragAndDrop.objectReferences[0] as Pattern2;
+            var newNot = DragAndDrop.objectReferences[0] as Note2;
             if (newPtn != null)
                 AddPattern(newPtn, e.mousePosition);
             if (newNot != null)
@@ -214,7 +212,7 @@ public class PatternEditorWindow : EditorWindow
                 editingPtn.noteList.Remove(np);
                 continue;
             }
-            var rct = new Rect(np.time * noteWidth, np.ballIndex * SequencerEditorUtility.noteHeight, np.note.duration * noteWidth, SequencerEditorUtility.noteHeight);
+            var rct = new Rect(np.time * noteWidth, np.ballIndex * SequencerEditorUtility.noteHeight, np.duration * noteWidth, SequencerEditorUtility.noteHeight);
             var style = new GUIStyle();
             style.normal.background = np.note.noteTex;
             style.normal.textColor = Color.white;
@@ -301,7 +299,7 @@ public class PatternEditorWindow : EditorWindow
         {
             if (pickerID == 0)
             {
-                var newPtn = pickedObj as Pattern;
+                var newPtn = pickedObj as Pattern2;
                 if (newPtn != null)
                 {
                     AddPattern(newPtn, tmpMousePosition);
@@ -315,7 +313,7 @@ public class PatternEditorWindow : EditorWindow
         {
             if (pickerID == 0)
             {
-                var newNot = pickedObj as Note;
+                var newNot = pickedObj as Note2;
                 if (newNot != null)
                     AddNote(newNot, tmpMousePosition);
                 showPicker = false;
@@ -325,7 +323,7 @@ public class PatternEditorWindow : EditorWindow
         }
     }
 
-    void AddPattern(Pattern p, Vector2 pos)
+    void AddPattern(Pattern2 p, Vector2 pos)
     {
         if (p.CheckLoop(editingPtn))
         {
@@ -335,15 +333,16 @@ public class PatternEditorWindow : EditorWindow
             Repaint();
             return;
         }
-        var newPp = new PatternPosition();
+        var newPp = new PatternPosition2();
         newPp.pattern = p;
         SetPatternValWithPos(newPp, pos);
         editingPtn.patternList.Add(newPp);
     }
-    void AddNote(Note n, Vector2 pos)
+    void AddNote(Note2 n, Vector2 pos)
     {
-        var newNp = new NotePosition();
+        var newNp = new NotePosition2();
         newNp.note = n;
+        newNp.duration = 1f;
         SetNoteValWithPos(newNp, pos);
         editingPtn.noteList.Add(newNp);
     }
@@ -352,9 +351,10 @@ public class PatternEditorWindow : EditorWindow
     void CreatePattern()
     {
         Undo.RecordObject(editingPtn, "add new pattern");
-        var newPtn = Pattern.CreateInstance<Pattern>();
+        var newPtn = Pattern2.CreateInstance<Pattern2>();
         newPtn.numBalls = editingPtn.numBalls;
         newPtn.numLeds = editingPtn.numLeds;
+        newPtn.pallet = editingPtn.pallet;
 
         AssetDatabase.CreateAsset(newPtn, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/PatternNeo/new Pattern.asset"));
         AssetDatabase.SaveAssets();
@@ -368,9 +368,8 @@ public class PatternEditorWindow : EditorWindow
     void CreateNote()
     {
         Undo.RecordObject(editingPtn, "add new note");
-        var newNot = Note.CreateInstance<Note>();
+        var newNot = Note2.CreateInstance<Note2>();
         newNot.numLeds = editingPtn.numLeds;
-        newNot.gradient = new Gradient();
 
         AssetDatabase.CreateAsset(newNot, AssetDatabase.GenerateUniqueAssetPath("Assets/Sequencer/Datas/NoteNeo/new Note.asset"));
         AssetDatabase.SaveAssets();
@@ -386,7 +385,7 @@ public class PatternEditorWindow : EditorWindow
     #endregion
 
     #region Snap node position
-    void SetPatternValWithPos(PatternPosition pp, Vector2 pos)
+    void SetPatternValWithPos(PatternPosition2 pp, Vector2 pos)
     {
         Undo.RecordObject(editingPtn, "edit pattern pos");
         pp.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
@@ -395,11 +394,11 @@ public class PatternEditorWindow : EditorWindow
         pp.ballIndex = Mathf.Max(1 - pp.pattern.numBalls, Mathf.Min(editingPtn.numBalls - 1, pp.ballIndex));
         EditorUtility.SetDirty(editingPtn);
     }
-    void SetNoteValWithPos(NotePosition np, Vector2 pos)
+    void SetNoteValWithPos(NotePosition2 np, Vector2 pos)
     {
         Undo.RecordObject(editingPtn, "edit note pos");
         np.time = Mathf.Floor(pos.x / noteWidth * 4f) / 4f;
-        np.time = Mathf.Max(0.25f - np.note.duration, Mathf.Min((float)editingPtn.duration - 0.25f, np.time));
+        np.time = Mathf.Max(0.25f - np.duration, Mathf.Min((float)editingPtn.duration - 0.25f, np.time));
         np.ballIndex = Mathf.FloorToInt(pos.y / SequencerEditorUtility.noteHeight);
         np.ballIndex = Mathf.Max(0, Mathf.Min(editingPtn.numBalls - 1, np.ballIndex));
         EditorUtility.SetDirty(editingPtn);

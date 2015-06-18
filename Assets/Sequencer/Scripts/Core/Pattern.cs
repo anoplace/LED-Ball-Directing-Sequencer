@@ -50,10 +50,6 @@ public class Pattern : ScriptableObject
         _tex.Apply();
         _tex.hideFlags = HideFlags.HideAndDontSave;
     }
-    public void Init()
-    {
-
-    }
     //colors for LEDs of ball
     public Color[] GetColors(float time, int ballIndex)
     {
