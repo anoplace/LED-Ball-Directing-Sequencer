@@ -24,6 +24,7 @@ public class LedOscController : MonoBehaviour
 
         var miliSec = (int)(duration * 1000);
         Debug.Log(duration + ", " + miliSec);
+        mEnc.Add(0);
         mEnc.Add(miliSec);
 		foreach(var c in cs)
             mEnc.Add(ColorToCode(c));
