@@ -84,8 +84,8 @@ public class AnoBallController : MonoBehaviour
                 StopAllCoroutines();
                 StartCoroutine(Bara(bpmDuration));
             }
-			if(Input.GetKeyDown(KeyCode.N))
-				LongLit();
+            if (Input.GetKeyDown(KeyCode.N))
+                LongLit();
 
             if (Input.GetKeyDown(KeyCode.Alpha1))
                 ctrlDuration = 1f;
@@ -161,29 +161,30 @@ public class AnoBallController : MonoBehaviour
         var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
         oscController.BroadcastToAll(nextColors, 0.01f);
         yield return new WaitForSeconds(0.05f);
-		
+
         var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
-        oscController.BroadcastToAll(blk, oneShot*0.5f);
+        oscController.BroadcastToAll(blk, oneShot * 0.5f);
     }
     IEnumerator Bara(float duration)
     {
         ColorForward();
-		var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
+        var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
         for (var i = 0; i < numBalls; i++)
         {
             var nextColors = GetGradientColors(GetColor(currentColorIndex + i), GetColor(currentColorIndex + gradientDelta + i));
             oscController.SendToBall(nextColors, 0.01f, i);
             yield return new WaitForSeconds(0.05f);
 
-            oscController.SendToBall(blk, duration, i);
+            oscController.SendToBall(blk, oneShot*2f, i);
             yield return new WaitForSeconds(Mathf.Max(0.05f, oneShot * 0.25f - 0.06f));
         }
     }
-	void LongLit(){
-		ColorForward();
-		var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
-		oscController.BroadcastToAll(nextColors, 0.01f);
-	}
+    void LongLit()
+    {
+        ColorForward();
+        var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
+        oscController.BroadcastToAll(nextColors, 0.01f);
+    }
 
     void ColorForward()
     {
