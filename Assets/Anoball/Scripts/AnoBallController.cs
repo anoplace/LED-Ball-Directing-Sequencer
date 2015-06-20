@@ -12,7 +12,7 @@ public class AnoBallController : MonoBehaviour
     public int currentBpm = 121;
     public int gradientDelta = 3;
     public int forward = 3;
-    int currentColorIndex = 0;
+    int currentColorIndex = 6;
 
     LedOscController oscController;
     int numBalls = 10;
@@ -50,45 +50,54 @@ public class AnoBallController : MonoBehaviour
     {
         if (Input.anyKeyDown)
         {
-            var changeHalf = Input.GetKey(KeyCode.RightShift) || Input.GetKey(KeyCode.LeftShift);
+            var changeHalf = Input.GetKey(KeyCode.Z);
+            var fastChange = Input.GetKey(KeyCode.X);
+            var delta = fastChange ? 0.05f : bpmDelta;
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 StopAllCoroutines();
-                StartCoroutine(OrderGradientToNext(bpmDelta, bpmDuration, changeHalf));
+                StartCoroutine(OrderGradientToNext(delta, bpmDuration, changeHalf));
             }
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             {
                 StopAllCoroutines();
-                StartCoroutine(
-                    SyncGradientToNext(bpmDuration,
-                    changeHalf
-                    )
-                );
+                StartCoroutine(SyncGradientToNext(delta, bpmDuration, changeHalf));
             }
 
             if (Input.GetKeyDown(KeyCode.G))
-                gradientDelta = 3;
+                gradientDelta = 4;
             if (Input.GetKeyDown(KeyCode.C))
                 gradientDelta = 0;
             if (Input.GetKeyDown(KeyCode.F))
             {
                 StopAllCoroutines();
-                StartCoroutine(FadeOut(bpmDuration, changeHalf));
+                StartCoroutine(FadeOut(delta, bpmDuration, changeHalf));
+            }
+            if (Input.GetKeyDown(KeyCode.V))
+            {
+                StopAllCoroutines();
+                StartCoroutine(Flash(bpmDuration));
+            }
+            if (Input.GetKeyDown(KeyCode.B))
+            {
+                StopAllCoroutines();
+                StartCoroutine(Bara(bpmDuration));
             }
 
             if (Input.GetKeyDown(KeyCode.Alpha1))
-                ctrlDuration = 1;
+                ctrlDuration = 1f;
             if (Input.GetKeyDown(KeyCode.Alpha2))
-                ctrlDuration = 2;
+                ctrlDuration = 2f;
             if (Input.GetKeyDown(KeyCode.Alpha3))
-                ctrlDuration = 4;
+                ctrlDuration = 4f;
 
             if (Input.GetKeyDown(KeyCode.Alpha4))
-                ctrlDelta = 0.1f;
-            if (Input.GetKeyDown(KeyCode.Alpha5))
                 ctrlDelta = 0.5f;
-            if (Input.GetKeyDown(KeyCode.Alpha6))
+            if (Input.GetKeyDown(KeyCode.Alpha5))
                 ctrlDelta = 1f;
+            if (Input.GetKeyDown(KeyCode.Alpha6))
+                ctrlDelta = 2f;
 
             if (Input.GetKeyDown(KeyCode.Alpha7))
                 currentBpm = bpms[0];
@@ -108,15 +117,14 @@ public class AnoBallController : MonoBehaviour
         return cs;
     }
 
-    IEnumerator SyncGradientToNext(float duration, bool changeHalf = false)
+    IEnumerator SyncGradientToNext(float delta, float duration, bool changeHalf = false)
     {
-        var delta = 0.05f;
         ColorForward();
         var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
         for (var i = 0; i < numBalls; i++)
         {
             if (!changeHalf || (changeHalf && i % 2 == currentColorIndex % 2))
-                oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration - delta * (float)i), i);
+                oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration), i);
             yield return new WaitForSeconds(delta);
         }
     }
@@ -134,15 +142,39 @@ public class AnoBallController : MonoBehaviour
         }
     }
 
-    IEnumerator FadeOut(float duration, bool changeHalf = false)
+    IEnumerator FadeOut(float delta, float duration, bool changeHalf = false)
     {
-        var delta = 0.05f;
         var nextColors = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
         for (var i = 0; i < numBalls; i++)
         {
             if (!changeHalf || (changeHalf && i % 2 == currentColorIndex % 2))
-                oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration - delta * (float)i), i);
+                oscController.SendToBall(nextColors, Mathf.Max(0.1f, duration), i);
             yield return new WaitForSeconds(delta);
+        }
+    }
+
+    IEnumerator Flash(float duration)
+    {
+        ColorForward();
+        var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
+        oscController.BroadcastToAll(nextColors, 0.01f);
+        yield return new WaitForSeconds(0.05f);
+		
+        var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
+        oscController.BroadcastToAll(blk, duration);
+    }
+    IEnumerator Bara(float duration)
+    {
+        ColorForward();
+		var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
+        for (var i = 0; i < numBalls; i++)
+        {
+            var nextColors = GetGradientColors(GetColor(currentColorIndex + i), GetColor(currentColorIndex + gradientDelta + i));
+            oscController.SendToBall(nextColors, 0.01f, i);
+            yield return new WaitForSeconds(0.05f);
+
+            oscController.SendToBall(blk, duration, i);
+            yield return new WaitForSeconds(Mathf.Max(0.05f, oneShot * 0.25f - 0.06f));
         }
     }
 

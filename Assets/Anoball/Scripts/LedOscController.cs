@@ -26,20 +26,37 @@ public class LedOscController : MonoBehaviour
         Debug.Log(duration + ", " + miliSec);
         mEnc.Add(0);
         mEnc.Add(miliSec);
-		foreach(var c in cs)
+        foreach (var c in cs)
             mEnc.Add(ColorToCode(c));
 
         anoballs[ballId].SetGradientColors(cs, duration);
         oSender.Send(mEnc);
     }
-	
+
+    public void BroadcastToAll(Color[] cs, float duration)
+    {
+        var address = "/ball/0";
+        var mEnc = new MessageEncoder(address);
+
+        var miliSec = (int)(duration * 1000);
+        Debug.Log(duration + "," + miliSec);
+        mEnc.Add(1);
+        mEnc.Add(miliSec);
+        foreach (var c in cs)
+            mEnc.Add(ColorToCode(c));
+
+        foreach (var b in anoballs)
+            b.SetGradientColors(cs, duration);
+        oSender.Send(mEnc);
+    }
+
     int ColorToCode(Color c)
     {
         Color32 c32 = c;
         return ((c32.r << 8) + c32.g << 8) + c32.b;
     }
 
-	[System.SerializableAttribute]
+    [System.SerializableAttribute]
     public class Pallet
     {
         public Color[] colors = new Color[12];
