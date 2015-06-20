@@ -84,6 +84,8 @@ public class AnoBallController : MonoBehaviour
                 StopAllCoroutines();
                 StartCoroutine(Bara(bpmDuration));
             }
+			if(Input.GetKeyDown(KeyCode.N))
+				LongLit();
 
             if (Input.GetKeyDown(KeyCode.Alpha1))
                 ctrlDuration = 1f;
@@ -161,7 +163,7 @@ public class AnoBallController : MonoBehaviour
         yield return new WaitForSeconds(0.05f);
 		
         var blk = Enumerable.Repeat<Color>(Color.black, numLeds).ToArray();
-        oscController.BroadcastToAll(blk, duration);
+        oscController.BroadcastToAll(blk, oneShot*0.5f);
     }
     IEnumerator Bara(float duration)
     {
@@ -177,6 +179,11 @@ public class AnoBallController : MonoBehaviour
             yield return new WaitForSeconds(Mathf.Max(0.05f, oneShot * 0.25f - 0.06f));
         }
     }
+	void LongLit(){
+		ColorForward();
+		var nextColors = GetGradientColors(GetColor(currentColorIndex), GetColor(currentColorIndex + gradientDelta));
+		oscController.BroadcastToAll(nextColors, 0.01f);
+	}
 
     void ColorForward()
     {
